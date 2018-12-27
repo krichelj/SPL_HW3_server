@@ -16,8 +16,7 @@ public class MyServer {
             while (true)
             {
                 Socket clientSocket = serverSocket.accept();
-                OutputStream outputStream = clientSocket.getOutputStream();
-                /*outputStream.write("Hi man\n".getBytes());*/
+                clientSocket.getOutputStream().write("Hi my name is Chicka \n".getBytes());
                 clientSocket.close();
             }
         } catch (IOException e) {
