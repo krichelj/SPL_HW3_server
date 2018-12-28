@@ -1,15 +1,19 @@
 package bgu.spl.net.srv;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import bgu.spl.net.api.BidiMessagingProtocolImpl;
+import bgu.spl.net.api.MessageEncoderDecoderImpl;
 
-public class MyServer {
+public class ServerRunner {
 
     public static void main (String[] args){
 
-        int port = 1025;
+
+        /*Server.threadPerClient(7777,
+                () -> new BidiMessagingProtocolImpl<>(feed), //protocol factory
+                MessageEncoderDecoderImpl::new  //message encoder decoder factory
+        ).serve();*/
+
+        /*int port = 1025;
 
         try {
             ServerSocket serverSocket = new ServerSocket(port);
@@ -21,6 +25,9 @@ public class MyServer {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
+
+
+
     }
 }

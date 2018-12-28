@@ -21,6 +21,7 @@ public class EchoProtocol implements MessagingProtocol<String> {
 
     @Override
     public boolean shouldTerminate() {
+
         return shouldTerminate;
     }
 }

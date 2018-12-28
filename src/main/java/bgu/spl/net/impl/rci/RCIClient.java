@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.Socket;
 
+/**
+ * A generic client for our generic protocol
+ */
 public class RCIClient implements Closeable {
 
     private final ObjectEncoderDecoder encdec;
@@ -15,6 +18,7 @@ public class RCIClient implements Closeable {
     private final BufferedOutputStream out;
 
     public RCIClient(String host, int port) throws IOException {
+
         sock = new Socket(host, port);
         encdec = new ObjectEncoderDecoder();
         in = new BufferedInputStream(sock.getInputStream());
@@ -22,11 +26,13 @@ public class RCIClient implements Closeable {
     }
 
     public void send(Command<?> cmd) throws IOException {
+
         out.write(encdec.encode(cmd));
         out.flush();
     }
 
     public Serializable receive() throws IOException {
+
         int read;
         while ((read = in.read()) >= 0) {
             Serializable msg = encdec.decodeNextByte((byte) read);
@@ -40,6 +46,7 @@ public class RCIClient implements Closeable {
 
     @Override
     public void close() throws IOException {
+
         out.close();
         in.close();
         sock.close();

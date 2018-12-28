@@ -1,6 +1,8 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
+import bgu.spl.net.api.MessageEncoderDecoderImpl;
+import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -16,14 +18,14 @@ public class Reactor<T> implements Server<T> {
 
     private final int port;
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
-    private final Supplier<MessageEncoderDecoder<T>> readerFactory;
+    private final Supplier<MessageEncoderDecoderImpl<T>> readerFactory;
     private final ActorThreadPool pool;
     private Selector selector;
     private Thread selectorThread;
     private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
 
     public Reactor(int numThreads, int port, Supplier<BidiMessagingProtocol<T>> protocolFactory,
-            Supplier<MessageEncoderDecoder<T>> readerFactory) {
+            Supplier<MessageEncoderDecoderImpl<T>> readerFactory) {
 
         this.pool = new ActorThreadPool(numThreads);
         this.port = port;

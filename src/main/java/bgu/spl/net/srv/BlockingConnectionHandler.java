@@ -1,6 +1,8 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
+import bgu.spl.net.api.MessageEncoderDecoderImpl;
+import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
 
@@ -18,13 +20,13 @@ import java.net.Socket;
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
     private final BidiMessagingProtocol<T> protocol; // the protocol in use
-    private final MessageEncoderDecoder<T> encdec; // the encoded - decoder in use
+    private final MessageEncoderDecoderImpl<T> encdec; // the encoded - decoder in use
     private final Socket sock; // the TCP socket connected to the client
     private BufferedInputStream inputStream;
     private BufferedOutputStream outputStream;
     private volatile boolean connected = true;
 
-    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol) {
+    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoderImpl<T> reader, BidiMessagingProtocol<T> protocol) {
 
         this.sock = sock;
         this.encdec = reader;
@@ -41,12 +43,13 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             outputStream = new BufferedOutputStream(sock.getOutputStream());
 
             while (!protocol.shouldTerminate() && connected && (read = inputStream.read()) >= 0) {
-                T nextMessage = encdec.decodeNextByte((byte) read);
+
+                /*T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
-                    /*protocol.process(nextMessage);
+                    protocol.process(nextMessage);
                     out.write(encdec.encode(response));
-                    out.flush();*/ // TODO implement this
-                }
+                    out.flush(); // TODO implement this
+                }*/
             }
 
         } catch (IOException ex) {
@@ -64,6 +67,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     @Override
     public void send(T msg) {
+
 
 
 
