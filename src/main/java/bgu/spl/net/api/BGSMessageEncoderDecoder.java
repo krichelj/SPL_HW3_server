@@ -3,7 +3,7 @@ package bgu.spl.net.api;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
-public class MessageEncoderDecoderImpl<T> implements MessageEncoderDecoder<Serializable> {
+public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<Serializable> {
 
     private final ByteBuffer lengthBuffer = ByteBuffer.allocate(4);
 

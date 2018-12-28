@@ -1,12 +1,10 @@
 package bgu.spl.net.api;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.BlockingConnectionHandler;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
-
 import java.net.Socket;
 import java.util.HashMap;
 
@@ -21,7 +19,7 @@ import java.util.HashMap;
 public class ConnectionsImpl<T> implements Connections<T> {
 
     private HashMap<Integer,ConnectionHandler> handlersList;
-    private static int clientID = 1;
+    private static int connectionId = 1;
 
     public ConnectionsImpl () {
 
@@ -39,7 +37,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public void broadcast(T msg) {
 
-        handlersList.forEach((ID, connectionHandler) -> connectionHandler.send(msg));
+        handlersList.forEach((connectionId, connectionHandler) -> connectionHandler.send(msg));
 
     }
 
@@ -50,7 +48,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     }
 
-    public void addClient (Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol){
+    public void addClient (int connectionId){
 
         handlersList.put(clientID++,new BlockingConnectionHandler(sock, reader, protocol));
     }

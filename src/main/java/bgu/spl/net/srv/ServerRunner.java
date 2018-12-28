@@ -1,17 +1,17 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.BidiMessagingProtocolImpl;
-import bgu.spl.net.api.MessageEncoderDecoderImpl;
+import bgu.spl.net.api.BGSMessageEncoderDecoder;
+import bgu.spl.net.api.BGSMessagingProtocol;
 
 public class ServerRunner {
 
     public static void main (String[] args){
 
 
-        /*Server.threadPerClient(7777,
-                () -> new BidiMessagingProtocolImpl<>(feed), //protocol factory
-                MessageEncoderDecoderImpl::new  //message encoder decoder factory
-        ).serve();*/
+        Server.threadPerClient(7777,
+                () -> new BGSMessagingProtocol<>(), //protocol factory
+                BGSMessageEncoderDecoder::new  //message encoder decoder factory
+        ).serve();
 
         /*int port = 1025;
 

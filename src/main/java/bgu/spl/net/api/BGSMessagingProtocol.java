@@ -5,32 +5,20 @@ import bgu.spl.net.api.bidi.Connections;
 
 import java.io.Serializable;
 
-public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<Serializable> {
-
-    // fields
-
-    private T argument;
-
-    // constructor
-
-    public BidiMessagingProtocolImpl (T argument) {
-
-        this.argument = argument;
-    }
+public class BGSMessagingProtocol<T> implements BidiMessagingProtocol<Serializable> {
 
     // methods
 
     @Override
     public void start(int connectionId, Connections<Serializable> connections) {
 
-
-
+        connections
     }
 
     @Override
     public void process(Serializable message) {
 
-
+        ((BGSCommand) message).execute();
     }
 
     @Override
