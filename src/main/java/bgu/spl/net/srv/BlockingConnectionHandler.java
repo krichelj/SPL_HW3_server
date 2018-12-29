@@ -1,49 +1,49 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.BGSCommand;
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.HashMap;
 
-public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<BGSCommand> {
+public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
     private final BidiMessagingProtocol<T> protocol;
-    private final MessageEncoderDecoder<T> encdec;
-    private final Socket sock;
-    private BufferedInputStream in;
-    private BufferedOutputStream out;
+    private final MessageEncoderDecoder<T> encoderDecoder;
+    private final Socket clientSocket;
+    private BufferedInputStream inputStream;
+    private BufferedOutputStream outputStream;
     private volatile boolean connected = true;
 
-    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol) {
+    public BlockingConnectionHandler(Socket clientSocket, MessageEncoderDecoder<T> encoderDecoder, BidiMessagingProtocol<T> protocol) {
 
-        this.sock = sock;
-        this.encdec = reader;
+        this.clientSocket = clientSocket;
+        this.encoderDecoder = encoderDecoder;
         this.protocol = protocol;
     }
 
     @Override
     public void run() {
 
-        try (Socket sock = this.sock) { //just for automatic closing
+        try {
+
+            inputStream = new BufferedInputStream(clientSocket.getInputStream());
+            outputStream = new BufferedOutputStream(clientSocket.getOutputStream());
 
             int read;
 
-            in = new BufferedInputStream(sock.getInputStream());
-            out = new BufferedOutputStream(sock.getOutputStream());
+            while (!protocol.shouldTerminate() && connected && (read = inputStream.read()) >= 0) {
 
-            while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
-                /*T nextMessage = encdec.decodeNextByte((byte) read);
-                if (nextMessage != null) {
+                T nextMessage = encoderDecoder.decodeNextByte((byte) read);
+
+                /*if (nextMessage != null) {
                     T response = protocol.process(nextMessage);
                     if (response != null) {
-                        out.write(encdec.encode(response));
-                        out.flush();
+                        outputStream.write(encoderDecoder.encode(response));
+                        outputStream.flush();
                     }
                 }*/
             }
@@ -57,12 +57,14 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void close() throws IOException {
 
+        clientSocket.close();
         connected = false;
-        sock.close();
+        inputStream.close();
+        outputStream.close();
     }
 
     @Override
-    public void send(BGSCommand msg) {
+    public void send(T msg) {
 
 
 

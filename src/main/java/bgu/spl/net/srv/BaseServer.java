@@ -1,9 +1,7 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.BGSCommand;
 import bgu.spl.net.api.ConnectionsImpl;
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
 
@@ -12,32 +10,37 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.function.Supplier;
 
-/** An abstract server that allow its derivatives to implement different concurrency models
+/** An abstract server that allow its derivatives to implement different concurrency models.
  * Our TCP server needs to create a new Protocol and EncoderDecoder for every connection it receives
  * but since it is a generic server, it does not know what and how to create such objects.
  * This problem is solved using factories, the server receives factories in its constructor that create those objects for it.
  * @param <T>
  */
+
+@SuppressWarnings("unchecked") // suppress unchecked assignment warnings
+
 public abstract class BaseServer<T> implements Server<T> {
 
     // fields
 
     private final int port;
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
-    private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
+    private final Supplier<MessageEncoderDecoder<T>> encoderDecoderFactory;
     private ServerSocket serverSocket;
-    private Connections<BGSCommand> currentServerConnections;
+    private ConnectionsImpl<T> currentServerConnections;
+    private static int connectionId;
 
     // constructor
 
     public BaseServer(int port, Supplier<BidiMessagingProtocol<T>> protocolFactory,
-            Supplier<MessageEncoderDecoder<T>> encdecFactory) {
+            Supplier<MessageEncoderDecoder<T>> encoderDecoderFactory) {
 
         this.port = port;
         this.protocolFactory = protocolFactory;
-        this.encdecFactory = encdecFactory;
-        serverSocket = null;
+        this.encoderDecoderFactory = encoderDecoderFactory;
         currentServerConnections = new ConnectionsImpl<>();
+        serverSocket = null;
+        connectionId = 1;
     }
 
     // methods
@@ -45,19 +48,19 @@ public abstract class BaseServer<T> implements Server<T> {
     @Override
     public void serve() {
 
-        // try-with-resource statement that is allowed due to the ServerSocket's closeable attribute
-
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        try {
 
 			System.out.println("Server started");
-            this.serverSocket = serverSocket; // just to be able to close
+            serverSocket = new ServerSocket(port);
 
             while (!Thread.currentThread().isInterrupted()) {
 
                 Socket clientSocket = serverSocket.accept(); // blocks until a connection is made
-                BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(clientSocket, encdecFactory.get(),
-                        protocolFactory.get());
-                execute(handler);
+                System.out.println("A client has connected!");
+                BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(clientSocket, encoderDecoderFactory.get(),
+                        protocolFactory.get()); // creates a new ConnectionHandler for the client
+                currentServerConnections.addClient(connectionId++, handler); // adds the client to the ConnectionsImpl map
+                execute(handler); // executed the ConnectionHandler
             }
         } catch (IOException ex) {
         }
@@ -68,8 +71,7 @@ public abstract class BaseServer<T> implements Server<T> {
     @Override
     public void close() throws IOException {
 
-		if (serverSocket != null)
-            serverSocket.close();
+		serverSocket.close();
     }
 
     protected abstract void execute(BlockingConnectionHandler<T>  handler);

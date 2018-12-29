@@ -3,7 +3,6 @@ package bgu.spl.net.srv;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-
 import java.io.Closeable;
 import java.util.function.Supplier;
 
