@@ -2,7 +2,6 @@ package bgu.spl.net.api.Messages;
 
 import bgu.spl.net.api.BGSMessage;
 
-import java.io.Serializable;
 
 public class StatsMessage extends BGSMessage {
 
@@ -19,9 +18,9 @@ public class StatsMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
         return null;
-    }
+    }*/
 }

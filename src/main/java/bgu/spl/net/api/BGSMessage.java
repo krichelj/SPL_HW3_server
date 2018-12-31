@@ -1,18 +1,20 @@
 package bgu.spl.net.api;
 
-import java.io.Serializable;
-
-public abstract class BGSMessage implements Serializable {
+public class BGSMessage {
 
     // fields
 
     private final short opCode;
+    /*protected final BGSUsers usersInstance;
+    protected BGSMessage outputMessage;*/
 
     // constructor
 
     protected BGSMessage(short opCode) {
 
         this.opCode = opCode;
+        /*usersInstance = BGSUsers.getInstance();
+        outputMessage = null;*/
     }
 
     // methods
@@ -22,5 +24,5 @@ public abstract class BGSMessage implements Serializable {
         return opCode;
     }
 
-    abstract public Serializable execute();
+    /*abstract public BGSMessage execute();*/
 }

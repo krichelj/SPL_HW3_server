@@ -1,5 +1,6 @@
 package bgu.spl.net.api;
 
+import bgu.spl.net.api.Messages.AckMessage;
 import bgu.spl.net.api.Messages.RegisterMessage;
 
 import java.io.BufferedInputStream;
@@ -19,11 +20,11 @@ public class ClientRunner {
 
             // send block
 
-            outputStream.write(encoderDecoder.encode(new RegisterMessage("Shay", "123")));
+            outputStream.write(encoderDecoder.encode(new AckMessage((short)1)));
             outputStream.flush();
 
             // receive block
-            /*int read;
+            int read;
             BGSMessage msg = null;
 
             while ((read = inputStream.read()) >= 0) {
@@ -32,7 +33,7 @@ public class ClientRunner {
                     System.out.println(msg.getOpCode());
                     return;
                 }
-            }*/
+            }
 
             throw new IOException("disconnected before complete reading message");
 

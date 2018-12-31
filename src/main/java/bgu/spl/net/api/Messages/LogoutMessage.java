@@ -2,7 +2,6 @@ package bgu.spl.net.api.Messages;
 
 import bgu.spl.net.api.BGSMessage;
 
-import java.io.Serializable;
 
 public class LogoutMessage extends BGSMessage {
 
@@ -15,9 +14,9 @@ public class LogoutMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
-        return null;
-    }
+        return new LogoutMessage();
+    }*/
 }

@@ -2,6 +2,9 @@ package bgu.spl.net.api;
 
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
+
+import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** This implementation should map a unique ID for each active client
@@ -37,18 +40,26 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public void broadcast(T msg) {
 
         handlersMap.forEach((connectionId, connectionHandler) -> connectionHandler.send(msg));
-
     }
 
     @Override
     public void disconnect(int connectionId) {
 
+        try {
+            handlersMap.get(connectionId).close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         handlersMap.remove(connectionId);
-
     }
 
     public void addClient (int connectionId, ConnectionHandler<T> connectionHandler){
 
         handlersMap.put(connectionId, connectionHandler);
+    }
+
+    public ConnectionHandler<T> getClient (int connectionId){
+
+        return handlersMap.get(connectionId);
     }
 }

@@ -1,7 +1,6 @@
 package bgu.spl.net.api;
 
 import bgu.spl.net.api.Messages.*;
-
 import java.util.LinkedList;
 
 public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMessage> {
@@ -32,29 +31,6 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
         }
 
         else if (currentOpCode == 1 || currentOpCode == 2 || currentOpCode == 6) { // register, login or PM message
-
-           /* if (!((char) nextByte == '\0' ) ) { // means we haven't read all the strings yet
-
-                if (index == 0) // means we haven't read the username yet
-                    firstString += (char) nextByte;
-                else // means we haven't read the password yet
-                    secondString += (char) nextByte;
-            }
-            else { // means we've finished reading the username
-
-                if (secondString.isEmpty()){
-                    index++;
-                }
-                else { // means we've finished reading the password and thus the entire command
-                    if (currentOpCode == 1)
-                        outputMessage = new RegisterMessage(firstString, secondString);
-                    else
-                        outputMessage = new LoginMessage(firstString, secondString);
-                    firstString = "";
-                    secondString = "";
-                    index = 0;
-                }
-            }*/
 
            if (index == 0) { // means we haven't recorded the first string yet
 

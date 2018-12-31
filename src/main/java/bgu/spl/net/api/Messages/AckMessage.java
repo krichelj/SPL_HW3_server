@@ -2,8 +2,6 @@ package bgu.spl.net.api.Messages;
 
 import bgu.spl.net.api.BGSMessage;
 
-import java.io.Serializable;
-
 public class AckMessage extends BGSMessage {
 
     // fields
@@ -20,11 +18,12 @@ public class AckMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
         return null;
-    }
+
+    }*/
 
     public short getMessageOpCope() {
 

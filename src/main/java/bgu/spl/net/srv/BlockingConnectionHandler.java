@@ -7,7 +7,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.HashMap;
 
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
@@ -20,9 +19,9 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     public BlockingConnectionHandler(Socket clientSocket, MessageEncoderDecoder<T> encoderDecoder, BidiMessagingProtocol<T> protocol) {
 
-        this.clientSocket = clientSocket;
-        this.encoderDecoder = encoderDecoder;
         this.protocol = protocol;
+        this.encoderDecoder = encoderDecoder;
+        this.clientSocket = clientSocket;
     }
 
     @Override
@@ -39,13 +38,12 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
                 T nextMessage = encoderDecoder.decodeNextByte((byte) read);
 
-                /*if (nextMessage != null) {
-                    T response = protocol.process(nextMessage);
-                    if (response != null) {
-                        outputStream.write(encoderDecoder.encode(response));
-                        outputStream.flush();
-                    }
-                }*/
+                /*if (((BGSMessage) nextMessage).getOpCode() == 1)
+                    System.out.println("REGISTER");*/
+
+                if (nextMessage != null) {
+                    protocol.process(nextMessage);
+                }
             }
 
         } catch (IOException ex) {
@@ -57,8 +55,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void close() throws IOException {
 
-        clientSocket.close();
         connected = false;
+        clientSocket.close();
         inputStream.close();
         outputStream.close();
     }
@@ -66,7 +64,11 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void send(T msg) {
 
-
-
+        try {
+            outputStream.write(encoderDecoder.encode(msg));
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -1,29 +1,39 @@
 package bgu.spl.net.api.Messages;
 
 import bgu.spl.net.api.BGSMessage;
-
-import java.io.Serializable;
+import bgu.spl.net.api.User;
 
 public class LoginMessage extends BGSMessage {
 
     // fields
 
-    private String username, password;
+    private User userToLogin;
 
     // constructor
 
     public LoginMessage(String username, String password) {
 
         super((short) 2);
-        this.username = username;
-        this.password = password;
+        userToLogin = new User (username,password);
+    }
+
+    public User getUserToLogin() {
+
+        return userToLogin;
     }
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
-        return null;
-    }
+        if (usersInstance.isUserLoggedIn(userToLogin))
+            outputMessage = new ErrorMessage(getOpCode());
+        else {
+            usersInstance.logUserIn(userToLogin);
+            outputMessage = new AckMessage(getOpCode());
+        }
+
+        return outputMessage;
+    }*/
 }

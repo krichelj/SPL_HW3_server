@@ -21,9 +21,9 @@ public class PMMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
         return null;
-    }
+    }*/
 }

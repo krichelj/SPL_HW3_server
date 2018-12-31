@@ -23,11 +23,11 @@ public class NotificationMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    /*@Override
+    public BGSMessage execute() {
 
         return null;
-    }
+    }*/
 
     public char getMessageType() {
 

@@ -25,9 +25,8 @@ public class FollowUnfollowMessage extends BGSMessage {
 
     // methods
 
-    @Override
-    public Serializable execute() {
+    public char getFollowOrUnfollow (){
 
-        return null;
+        return followOrUnfollow;
     }
 }
