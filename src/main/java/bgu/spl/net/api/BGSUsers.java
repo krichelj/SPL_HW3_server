@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BGSUsers {
 
     private final LinkedList<User> registeredUsers, loggedInUsers;
-    private final ConcurrentHashMap<User, Pair<LinkedList<User>, LinkedList<User>>> registeredUsersAndTheirFollowers;
+    private final ConcurrentHashMap<S, Pair<LinkedList<User>, LinkedList<User>>> registeredUsersAndTheirFollowers;
 
     // constructor
 

@@ -139,8 +139,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
             }*/
         }
 
-        currentConnection.send(outputMessage);
-    }
+        currentConnection.send(outputMessage);    }
 
     @Override
     public boolean shouldTerminate() {
