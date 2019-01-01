@@ -1,6 +1,7 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
+import bgu.spl.net.api.User;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
 import java.io.BufferedInputStream;
@@ -16,12 +17,14 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private BufferedInputStream inputStream;
     private BufferedOutputStream outputStream;
     private volatile boolean connected = true;
+    private User currentActiveUser;
 
     public BlockingConnectionHandler(Socket clientSocket, MessageEncoderDecoder<T> encoderDecoder, BidiMessagingProtocol<T> protocol) {
 
         this.protocol = protocol;
         this.encoderDecoder = encoderDecoder;
         this.clientSocket = clientSocket;
+        currentActiveUser = null;
     }
 
     @Override
@@ -70,5 +73,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setCurrentActiveUser(User currentActiveUser) {
+
+        currentActiveUser = currentActiveUser;
+    }
+
+    public User getCurrentActiveUser() {
+
+        return currentActiveUser;
     }
 }

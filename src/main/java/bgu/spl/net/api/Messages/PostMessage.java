@@ -17,11 +17,8 @@ public class PostMessage extends BGSMessage {
         super((short) 5);
     }
 
-    // methods
+    public String getContent() {
 
-    /*@Override
-    public BGSMessage execute() {
-
-        return null;
-    }*/
+        return content;
+    }
 }

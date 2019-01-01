@@ -25,6 +25,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
         this.currentServerUsers = currentServerUsers;
         shouldTerminate = false;
     }
+
     // methods
 
     @Override
@@ -38,21 +39,20 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
     @Override
     public void process(BGSMessage message) {
 
-        /*BGSMessage resultMessage = ((BGSMessage) message).execute();*/
-
-        BGSMessage outputMessage = null;
-        short currentOpCode = message.getOpCode();
+        BGSMessage outputMessage = null; // the output message
+        short currentOpCode = message.getOpCode(); // the current op code
+        User currentActiveUser = currentConnection.getCurrentActiveUser();
 
         if (currentOpCode == 1){ // RegisterMessage
 
             RegisterMessage messageToProcess = (RegisterMessage) message;
             User userToRegister = messageToProcess.getUserToRegister();
 
-            if (currentServerUsers.isUserRegistered(userToRegister))
-                outputMessage = new ErrorMessage(currentOpCode);
+            if (currentServerUsers.isUserRegistered(userToRegister)) // checks if the user is already registered
+                outputMessage = new ErrorMessage(currentOpCode); // create an Error message for the output
             else {
-                currentServerUsers.registerUser(userToRegister);
-                outputMessage = new AckMessage(currentOpCode);
+                currentServerUsers.registerUser(userToRegister); // register the user
+                outputMessage = new AckMessage(currentOpCode); // create an Ack message for the output
             }
         }
 
@@ -61,43 +61,61 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
             LoginMessage messageToProcess = (LoginMessage) message;
             User userToLogin = messageToProcess.getUserToLogin();
 
-            if (currentServerUsers.isUserLoggedIn(userToLogin))
+            // checks if the user is not registered or already logged in or typed in a wrong password
+            if (!currentServerUsers.isUserRegistered(userToLogin) ||
+                    currentServerUsers.isUserLoggedIn(userToLogin) || currentServerUsers.checkPassword(userToLogin))
                 outputMessage = new ErrorMessage(currentOpCode);
             else {
-                currentServerUsers.logUserIn(userToLogin);
+                currentServerUsers.logUserIn(userToLogin); // logs the user in
+                currentConnection.setCurrentActiveUser(userToLogin); // updates the connection's current active user
                 outputMessage = new AckMessage(currentOpCode);
             }
         }
 
         else if (currentOpCode == 3){ // LogoutMessage
 
-            connections.disconnect(connectionId);
-            shouldTerminate = true;
+            if (!currentServerUsers.isUserLoggedIn(currentActiveUser)) {
+                outputMessage = new ErrorMessage(currentOpCode);
+            }
+            else {
+                currentServerUsers.logUserOut(currentActiveUser); // logs the user out in case he's logged in
+                connections.disconnect(connectionId); // disconnects the current connection
+                outputMessage = new AckMessage(currentOpCode);
+            }
         }
 
         else if (currentOpCode == 4){ // FollowUnfollowMessage
 
+            Boolean done = false;
+            int numOfDoneUsers = 0;
             FollowUnfollowMessage messageToProcess = (FollowUnfollowMessage) message;
 
-            if (messageToProcess.getFollowOrUnfollow() == '0') { // in case the user wants to follow
+            if (currentServerUsers.isUserLoggedIn(currentActiveUser)) {
+
+                if (messageToProcess.getFollowOrUnfollow() == '0') { // in case the user wants to follow
+
+                    numOfDoneUsers = currentActiveUser.addToFollowing(messageToProcess.getUsers()).size();
+
+                } else {
+
+                    numOfDoneUsers = currentActiveUser.removeFromFollowing(messageToProcess.getUsers()).size();
 
 
+                }
 
+                if (numOfDoneUsers > 0)
+                    done = true;
             }
-
         }
 
-        else if (currentOpCode == 5){ // FollowUnfollowMessage
+        else if (currentOpCode == 5){ // PostMessage
 
-            FollowUnfollowMessage messageToProcess = (FollowUnfollowMessage) message;
-            /*User userToLogin = messageToProcess.getUserToLogin();
+            PostMessage messageToProcess = (PostMessage) message;
 
-            if (usersInstance.isUserLoggedIn(userToLogin))
-                outputMessage = new ErrorMessage(currentOpCode);
-            else {
-                usersInstance.logUserIn(userToLogin);
-                outputMessage = new AckMessage(currentOpCode);
-            }*/
+
+
+
+
         }
 
         else if (currentOpCode == 6){ // FollowUnfollowMessage
@@ -147,4 +165,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
         return shouldTerminate;
     }
+
+
 }

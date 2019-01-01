@@ -5,28 +5,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BGSUsers {
 
-    private final LinkedList<User> registeredUsers, loggedInUsers;
-    private final ConcurrentHashMap<User, Pair<LinkedList<User>, LinkedList<User>>> registeredUsersAndTheirFollowers;
+    private final ConcurrentHashMap<String,User> registeredUsers, loggedInUsers;
 
     // constructor
 
     public BGSUsers() {
 
-        registeredUsers = new LinkedList<>();
-        loggedInUsers = new LinkedList<>();
-        registeredUsersAndTheirFollowers = new ConcurrentHashMap<>();
+        registeredUsers = new ConcurrentHashMap<>();
+        loggedInUsers = new ConcurrentHashMap<>();
     }
 
     // methods
 
     public void registerUser (User user){
 
-        registeredUsers.add(user);
+        registeredUsers.put(user.getUsername(),user);
     }
 
     public void logUserIn (User user){
 
-        loggedInUsers.add(user);
+        loggedInUsers.put(user.getUsername(),user);
     }
 
     public boolean isUserRegistered (User user){
@@ -36,11 +34,16 @@ public class BGSUsers {
 
     public boolean isUserLoggedIn (User user){
 
-        return loggedInUsers.contains(user);
+        return user!= null && loggedInUsers.contains(user);
     }
 
     public void logUserOut (User user){
 
         loggedInUsers.remove(user);
+    }
+
+    public boolean checkPassword (User user){
+
+        return registeredUsers.get(user.getUsername()).getPassword().equals(user.getPassword());
     }
 }
