@@ -1,10 +1,11 @@
 package bgu.spl.net.api;
 
-public class BGSSavedMessage {
+public abstract class BGSSavedMessage {
 
     // fields
 
     private final String senderUsername, content;
+    private boolean wasRead;
 
     // constructor
 
@@ -12,6 +13,7 @@ public class BGSSavedMessage {
 
         this.senderUsername = senderUsername;
         this.content = content;
+        wasRead = false;
     }
 
     // methods

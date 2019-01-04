@@ -7,6 +7,7 @@ public class User {
     // fields
 
     private final String username, password;
+    private int loggedInConnectionID;
 
     public User(String username, String password) {
 

@@ -1,6 +1,6 @@
 package bgu.spl.net.api;
 
-public class BGSMessage {
+public abstract class BGSMessage {
 
     // fields
 

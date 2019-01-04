@@ -7,7 +7,7 @@ public class ServerRunner {
 
     public static void main (String[] args){
 
-        Server.threadPerClient(7778,
+        Server.threadPerClient(7777,
                 () -> new BGSMessagingProtocol(new BGSUsers()), //protocol factory
                 BGSMessageEncoderDecoder::new  //message encoder decoder factory
         ).serve();

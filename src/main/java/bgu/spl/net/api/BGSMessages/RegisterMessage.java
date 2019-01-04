@@ -14,7 +14,7 @@ public class RegisterMessage extends BGSMessage {
     public RegisterMessage(String username, String password) {
 
         super((short) 1);
-        userToRegister = new User (username,password);
+        userToRegister = new User (username, password);
     }
 
     // methods

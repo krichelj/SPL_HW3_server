@@ -13,7 +13,7 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
     private byte[] shortBytesArray = new byte[2], stringBytesArray = new byte[1 << 10];
     private int index = 0, stringBytesArrayIndex = 0;
     private short currentOpCode = 0, numOfUsers;
-    private char followOrUnfollow;
+    private short followOrUnfollow;
     private String firstString, secondString, addedUser;
     private final byte[] zeroByteArray = {(byte) '\0'};
     private LinkedList<String> userNameList = new LinkedList<>();
@@ -29,7 +29,6 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
 
             if (index == 2){ // means we've finished reading the opcode and need to record it
                 currentOpCode = shortBytesArrayToShort();
-                shortBytesArray = new byte[2]; // renew the opcode byte array for next opcode reading
                 index = 0;
                 if (currentOpCode == 3){ // Logout Message
                     outputMessage = new LogoutMessage();
@@ -74,19 +73,12 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
 
         else if (currentOpCode == 4){ // follow unfollow message
 
-            if (index == 0 || index == 1){ // means we haven't recorded the followOrUnfollow field yet
-                pushByte(nextByte);
-                index++;
-
-                if (index == 1) // means we are finished reading the followOrUnfollow field
-                    followOrUnfollow = popString().charAt(0);
-            }
-            else if (index == 2) { // means we haven't read the NumOfUsers field yet
-                shortBytesArray[index++] = nextByte;
+            if (index == 1) {   // means we haven't read the followOrUnfollow field yet
+                followOrUnfollow = (short) nextByte;
                 index++;
             }
-            else if (index == 3) { // means we've finished reading the NumOfUsers field and want to record it
-                numOfUsers = shortBytesArrayToShort();
+            else if (index == 3) {  // means we've finished reading the followOrUnfollow and need to record it
+                numOfUsers = (short) nextByte;
                 index++;
             }
             else if (index > 3) { // // means we're reading the userNameList field
@@ -106,6 +98,8 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
                     }
                 }
             }
+            else
+                index++;
         }
 
         else if (currentOpCode == 5){ // PostMessage

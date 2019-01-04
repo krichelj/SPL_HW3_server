@@ -7,13 +7,12 @@ public class FollowUnfollowMessage extends BGSMessage {
 
     // fields
 
-    private final char followOrUnfollow;
-    private final short numOfUsers;
+    private final short followOrUnfollow, numOfUsers;
     private final LinkedList<String> userNameList;
 
     // constructor
 
-    public FollowUnfollowMessage(char followOrUnfollow, short numOfUsers, LinkedList<String> userNameList) {
+    public FollowUnfollowMessage(short followOrUnfollow, short numOfUsers, LinkedList<String> userNameList) {
 
         super((short) 4);
         this.followOrUnfollow = followOrUnfollow;
@@ -23,7 +22,7 @@ public class FollowUnfollowMessage extends BGSMessage {
 
     // methods
 
-    public char getFollowOrUnfollow (){
+    public short getFollowOrUnfollow (){
 
         return followOrUnfollow;
     }

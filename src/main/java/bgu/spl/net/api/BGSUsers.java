@@ -4,6 +4,7 @@ import bgu.spl.net.api.BGSSavedMessages.PM;
 import bgu.spl.net.api.BGSSavedMessages.Post;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("WeakerAccess") // suppress weaker access warnings
 
@@ -11,8 +12,8 @@ public class BGSUsers {
 
     private final ConcurrentHashMap<String,User> registeredUsers, loggedInUsers;
     private final ConcurrentHashMap<User,LinkedList<User>> registeredUsersAndFollowings, registeredUsersAndFollowers;
-    private final ConcurrentHashMap<User,LinkedList<BGSSavedMessage>> registeredUsersAndPostedPosts, registeredUsersAndReceivedPosts,
-        registeredUsersAndSentPMS, registeredUsersAndReceivedPMS;
+    private final ConcurrentHashMap<User,LinkedList<BGSSavedMessage>> registeredUsersAndSentMessages, registeredUsersAndReceivedMessages;
+    private final ConcurrentHashMap<User, ConcurrentLinkedQueue<BGSSavedMessage>> registeredUsersAndUnreadMessages;
 
     // constructor
 
@@ -22,10 +23,9 @@ public class BGSUsers {
         loggedInUsers = new ConcurrentHashMap<>();
         registeredUsersAndFollowings = new ConcurrentHashMap<>();
         registeredUsersAndFollowers = new ConcurrentHashMap<>();
-        registeredUsersAndPostedPosts = new ConcurrentHashMap<>();
-        registeredUsersAndReceivedPosts = new ConcurrentHashMap<>();
-        registeredUsersAndSentPMS = new ConcurrentHashMap<>();
-        registeredUsersAndReceivedPMS = new ConcurrentHashMap<>();
+        registeredUsersAndSentMessages = new ConcurrentHashMap<>();
+        registeredUsersAndReceivedMessages = new ConcurrentHashMap<>();
+        registeredUsersAndUnreadMessages = new ConcurrentHashMap<>();
     }
 
     // methods
@@ -35,10 +35,9 @@ public class BGSUsers {
         registeredUsers.put(userToRegister.getUsername(),userToRegister);
         registeredUsersAndFollowings.put(userToRegister,new LinkedList<>());
         registeredUsersAndFollowers.put(userToRegister,new LinkedList<>());
-        registeredUsersAndPostedPosts.put(userToRegister,new LinkedList<>());
-        registeredUsersAndReceivedPosts.put(userToRegister,new LinkedList<>());
-        registeredUsersAndSentPMS.put(userToRegister,new LinkedList<>());
-        registeredUsersAndReceivedPMS.put(userToRegister,new LinkedList<>());
+        registeredUsersAndSentMessages.put(userToRegister,new LinkedList<>());
+        registeredUsersAndReceivedMessages.put(userToRegister,new LinkedList<>());
+        registeredUsersAndUnreadMessages.put(userToRegister,new ConcurrentLinkedQueue<>());
     }
 
     public void logUserIn(User userToLogIn){ // synchronize the database to prevent users with the same name to register concurrently
@@ -78,15 +77,14 @@ public class BGSUsers {
 
     public LinkedList<String> followUsers(User followingUser, LinkedList<String> usersToFollow){
 
-        LinkedList<User> currentlyFollowedUsers = registeredUsersAndFollowings.get(followingUser);
         LinkedList<String> addedUsersList = new LinkedList<>();
 
         for (String currentUserToFollowName : usersToFollow) {
 
             User currentUserToFollow = registeredUsers.get(currentUserToFollowName); // gets the current user from the user map
 
-            if (!currentlyFollowedUsers.contains(currentUserToFollow)) { // checks if the followingUser is not following the currentUser
-                currentlyFollowedUsers.add(currentUserToFollow);
+            if (!isUserFollowingOtherUser(followingUser,currentUserToFollow)) { // checks if the followingUser is not following the currentUser
+                registeredUsersAndFollowings.get(followingUser).add(currentUserToFollow);
                 addedUsersList.add(currentUserToFollowName);
             }
         }
@@ -113,30 +111,65 @@ public class BGSUsers {
     }
 
 
-    public void addPostToUserAndHisFollowersList(String posterUsername, String postContent){
+    public LinkedList<User> addPostToUserAndHisFollowersList(String posterUsername, String postContent, LinkedList<String> additionalUsersList){
 
         User userWhoPosted = registeredUsers.get(posterUsername);
         Post post = new Post(posterUsername, postContent);
+        LinkedList<User> userNamesToSendNotification = addPostToUserFollowersList(userWhoPosted, post); //
 
-        registeredUsersAndPostedPosts.get(userWhoPosted).add(post); // add the post to user's posted posts list
-        for (User currentFollowingUser : registeredUsersAndFollowers.get(userWhoPosted))
-            registeredUsersAndReceivedPosts.get(currentFollowingUser).add(post); // add the post to the user's followers
+        registeredUsersAndSentMessages.get(userWhoPosted).add(post); // add the post to user's posted posts list
+
+        if (!additionalUsersList.isEmpty()) // send the post to the additional users
+            for (String currentAdditionalUserName : additionalUsersList) {
+
+                User currentAdditionalUser = registeredUsers.get(currentAdditionalUserName);
+
+                if (!isUserFollowingOtherUser(currentAdditionalUser, userWhoPosted)) { // checks if the currentAdditionalUser isn't following the userWhoPosted
+
+                    registeredUsersAndReceivedMessages.get(currentAdditionalUser).add(post);
+
+                    if (!isUserLoggedIn(currentAdditionalUser)) // check if the current following user is not logged in
+                        registeredUsersAndUnreadMessages.get(currentAdditionalUser).add(post); // add the post to all users who follow that are not logged in
+                    else // in case the current following user is logged in
+                        userNamesToSendNotification.add(currentAdditionalUser); // add him to the users to send a notification to
+                }
+            }
+
+
+        return userNamesToSendNotification;
     }
 
-    public void addPostFromPosterToAdditionalUsers(String posterUsername, String postContent, LinkedList<String> additionalUsersList){
+    private LinkedList<User> addPostToUserFollowersList(User userWhoPosted, Post post){
 
-        Post post = new Post(posterUsername, postContent);
+        LinkedList<User> userNamesToSendNotification = new LinkedList<>();
 
-        for (String currentAdditionalUserName : additionalUsersList) // add the post to the additional users
-            registeredUsersAndReceivedPosts.get(registeredUsers.get(currentAdditionalUserName)).add(post);
+        for (User currentFollowingUser : registeredUsersAndFollowers.get(userWhoPosted)) {
+
+            registeredUsersAndReceivedMessages.get(currentFollowingUser).add(post); // add the post to the user
+
+            if (!isUserLoggedIn(currentFollowingUser))
+                registeredUsersAndUnreadMessages.get(currentFollowingUser).add(post);
+            else
+                userNamesToSendNotification.add(currentFollowingUser);
+        }
+
+        return userNamesToSendNotification;
     }
+
+    private boolean isUserFollowingOtherUser(User followingUser, User otherUser){
+
+        LinkedList<User> currentlyFollowedUsers = registeredUsersAndFollowings.get(followingUser);
+
+        return currentlyFollowedUsers!=null && currentlyFollowedUsers.contains(otherUser);
+    }
+
 
     public void addPMToSenderAndReceiver(String senderUsername, String receiverUsername, String content){
 
         PM pm = new PM (senderUsername, receiverUsername, content);
 
-        registeredUsersAndSentPMS.get(registeredUsers.get(senderUsername)).add(pm);
-        registeredUsersAndReceivedPMS.get(registeredUsers.get(receiverUsername)).add(pm);
+        registeredUsersAndSentMessages.get(registeredUsers.get(senderUsername)).add(pm);
+        registeredUsersAndReceivedMessages.get(registeredUsers.get(receiverUsername)).add(pm);
     }
 
     public LinkedList<String> getRegisteredUsers(){
@@ -146,7 +179,13 @@ public class BGSUsers {
 
     public int getNumOfPosts(String username) {
 
-        return registeredUsersAndPostedPosts.get(registeredUsers.get(username)).size();
+        int numOfPosts = 0;
+
+        for (BGSSavedMessage currentMessage : registeredUsersAndSentMessages.get(registeredUsers.get(username)))
+            if (currentMessage instanceof Post)
+                numOfPosts++;
+
+        return numOfPosts;
     }
 
     public int getNumOfFollowers(String username) {

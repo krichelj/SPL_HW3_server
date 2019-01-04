@@ -6,8 +6,8 @@ public class NotificationMessage extends BGSMessage {
 
     // fields
 
-    private char messageType;
-    private String postingUser, content;
+    private final char messageType;
+    private final String postingUser, content;
 
     // constructor
 

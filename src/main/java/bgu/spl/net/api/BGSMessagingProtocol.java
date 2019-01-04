@@ -71,6 +71,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                     currentServerUsers.logUserIn(userToLogin); // logs the user in
                     currentServerConnections.logUserIn(connectionId, userToLogin); // updates the connection's current active user
                     currentServerConnections.send(connectionId, new AckMessage(currentOpCode));
+
                 }
             }
         }
@@ -111,7 +112,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
                 if (currentServerUsers.isUserLoggedIn(currentActiveUser)) { // check if the user is logged in
 
-                    if (messageToProcess.getFollowOrUnfollow() == '0')  // in case the user wants to follow
+                    if (messageToProcess.getFollowOrUnfollow() == 0)  // in case the user wants to follow
                         usersSuccessfullyActedUpon = currentServerUsers.followUsers(currentActiveUser, usersToActUpon);
                     else // in case the user wants to unfollow
                         usersSuccessfullyActedUpon = currentServerUsers.unfollowUsers(currentActiveUser, usersToActUpon);
@@ -130,11 +131,14 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 if (currentServerUsers.isUserLoggedIn(currentActiveUser)) {
 
                     String postContent = messageToProcess.getContent(); // get the post content
-                    LinkedList<String> additionalUsersList = messageToProcess.getAdditionalUsersList(); // get the additional users list
 
-                    currentServerUsers.addPostToUserAndHisFollowersList(currentActiveUserName, postContent); // save the post to user and followers
-                    if (!additionalUsersList.isEmpty()) // save the post for the additional users if there are any
-                        currentServerUsers.addPostFromPosterToAdditionalUsers(currentActiveUserName, postContent, additionalUsersList);
+                    LinkedList<String> additionalUsersList = messageToProcess.getAdditionalUsersList();
+                    LinkedList<User> usersToSendNotification = currentServerUsers.addPostToUserAndHisFollowersList
+                                    (currentActiveUserName, postContent, additionalUsersList);
+
+                    for (User currentUserToSendNotification : usersToSendNotification)
+                        currentServerConnections.send(currentServerConnections.getNumOfConnectionForLoggedInUser(currentUserToSendNotification),
+                                new NotificationMessage('0', currentActiveUser.getUsername(), postContent));
                 }
                 else
                     currentServerConnections.send(connectionId, new ErrorMessage(currentOpCode));

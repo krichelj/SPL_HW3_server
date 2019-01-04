@@ -2,6 +2,8 @@ package bgu.spl.net.api;
 
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.BlockingConnectionHandler;
+
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** This implementation should map a unique ID for each active client
@@ -64,5 +66,22 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public void logUserIn(int connectionId, User userToLogIn) {
 
         connectedHandlersMap.get(connectionId).setCurrentActiveUser(userToLogIn);
+    }
+
+    public int getNumOfConnectionForLoggedInUser(User user){
+
+        boolean found = false;
+        int numOfConnection = 0;
+
+        for (int currentConnectionNum : connectedHandlersMap.keySet())
+
+            if (connectedHandlersMap.get(currentConnectionNum).getCurrentActiveUser().getUsername().equals(user.getUsername())) {
+
+                numOfConnection = currentConnectionNum;
+                found = true;
+            }
+
+
+        return numOfConnection;
     }
 }
