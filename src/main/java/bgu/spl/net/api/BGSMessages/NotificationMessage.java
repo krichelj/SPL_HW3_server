@@ -1,15 +1,13 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
-
-import java.io.Serializable;
 
 public class NotificationMessage extends BGSMessage {
 
     // fields
 
-    char messageType;
-    String postingUser, content;
+    private char messageType;
+    private String postingUser, content;
 
     // constructor
 
@@ -22,12 +20,6 @@ public class NotificationMessage extends BGSMessage {
     }
 
     // methods
-
-    /*@Override
-    public BGSMessage execute() {
-
-        return null;
-    }*/
 
     public char getMessageType() {
 

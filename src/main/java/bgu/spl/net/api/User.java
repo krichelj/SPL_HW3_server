@@ -6,14 +6,21 @@ public class User {
 
     // fields
 
-    private String username, password;
-    private LinkedList<User> followers, following;
+    private final String username, password;
 
     public User(String username, String password) {
 
         this.username = username;
         this.password = password;
-        followers = new LinkedList<>();
-        following = new LinkedList<>();
+    }
+
+    public String getUsername() {
+
+        return username;
+    }
+
+    public String getPassword() {
+
+        return password;
     }
 }

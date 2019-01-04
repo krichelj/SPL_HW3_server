@@ -1,16 +1,11 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.BGSMessage;
-import bgu.spl.net.api.BGSUsers;
 import bgu.spl.net.api.ConnectionsImpl;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.api.bidi.Connections;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /** An abstract server that allow its derivatives to implement different concurrency models.
@@ -20,7 +15,7 @@ import java.util.function.Supplier;
  * @param <T>
  */
 
-@SuppressWarnings("unchecked") // suppress unchecked assignment warnings
+@SuppressWarnings({"unchecked" , "WeakerAccess"}) // suppress unchecked assignment and weaker access warnings
 
 public abstract class BaseServer<T> implements Server<T> {
 
@@ -28,11 +23,10 @@ public abstract class BaseServer<T> implements Server<T> {
 
     private final int port;
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
-    private final ConcurrentHashMap<Integer,BidiMessagingProtocol<T>> protocolMap; // a map for the protocols of each client
     private final Supplier<MessageEncoderDecoder<T>> encoderDecoderFactory;
     private ServerSocket serverSocket;
-    private Connections<T> currentServerConnections;
-    private static int connectionId;
+    private ConnectionsImpl<T> currentServerConnections;
+    private static int connectionId = 1;
 
     // constructor
 
@@ -41,11 +35,8 @@ public abstract class BaseServer<T> implements Server<T> {
 
         this.port = port;
         this.protocolFactory = protocolFactory;
-        protocolMap = new ConcurrentHashMap<>();
         this.encoderDecoderFactory = encoderDecoderFactory;
-        serverSocket = null;
         currentServerConnections = new ConnectionsImpl<>();
-        connectionId = 1;
     }
 
     // methods
@@ -63,21 +54,16 @@ public abstract class BaseServer<T> implements Server<T> {
                 Socket clientSocket = serverSocket.accept(); // blocks until a connection is made
                 System.out.println("A client has connected!");
 
-                // create and initiate a new protocol for the client
-                BidiMessagingProtocol<T> currentProtocol = protocolFactory.get(); // get a new protocol from the factory
-                protocolMap.put(BaseServer.connectionId, currentProtocol); // put the new protocol in the protocol map and iterate the connectionId field
-                currentProtocol.start(BaseServer.connectionId, currentServerConnections); // start the new protocol
+                BlockingConnectionHandler<T> currentHandler = new BlockingConnectionHandler(clientSocket, encoderDecoderFactory.get(),
+                        protocolFactory.get()); // create a new ConnectionHandler for the client
 
-                BlockingConnectionHandler<T> handler = new BlockingConnectionHandler(clientSocket, encoderDecoderFactory.get(),
-                        currentProtocol); // creates a new ConnectionHandler for the client
-
-                ((ConnectionsImpl) currentServerConnections).addClient(BaseServer.connectionId, handler); // adds the client to the ConnectionsImpl map
-                BaseServer.connectionId++;
-                execute(handler); // run the ConnectionHandler thread
+                currentServerConnections.connect(BaseServer.connectionId, currentHandler); // add the client to the ConnectionsImpl map
+                currentHandler.startProtocol(BaseServer.connectionId++,currentServerConnections); // iterate the connectionId field for the next connection
+                execute(currentHandler); // run the ConnectionHandler thread
             }
         } catch (IOException ex) {
+            ex.printStackTrace();
         }
-
 
         System.out.println("server closed!!!");
     }
@@ -90,5 +76,4 @@ public abstract class BaseServer<T> implements Server<T> {
     }
 
     protected abstract void execute(BlockingConnectionHandler<T>  handler);
-
 }

@@ -1,4 +1,4 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
 
@@ -18,9 +18,8 @@ public class StatsMessage extends BGSMessage {
 
     // methods
 
-    /*@Override
-    public BGSMessage execute() {
+    public String getUsername() {
 
-        return null;
-    }*/
+        return username;
+    }
 }

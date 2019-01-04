@@ -1,4 +1,4 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
 
@@ -11,12 +11,4 @@ public class LogoutMessage extends BGSMessage {
 
         super((short) 3);
     }
-
-    // methods
-
-    /*@Override
-    public BGSMessage execute() {
-
-        return new LogoutMessage();
-    }*/
 }

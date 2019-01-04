@@ -1,4 +1,4 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
 import bgu.spl.net.api.User;
@@ -23,17 +23,4 @@ public class RegisterMessage extends BGSMessage {
 
         return userToRegister;
     }
-
-    /*@Override
-    public BGSMessage execute() {
-
-        if (usersInstance.isUserRegistered(userToRegister))
-            outputMessage = new ErrorMessage(getOpCode());
-        else {
-            usersInstance.registerUser(userToRegister);
-            outputMessage = new AckMessage(getOpCode());
-        }
-
-        return outputMessage;
-    }*/
 }

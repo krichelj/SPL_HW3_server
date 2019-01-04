@@ -1,8 +1,6 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
-
-import java.io.Serializable;
 
 public class UserListMessage extends BGSMessage {
 
@@ -12,12 +10,4 @@ public class UserListMessage extends BGSMessage {
 
         super((short) 7);
     }
-
-    // methods
-
-    /*@Override
-    public BGSMessage execute() {
-
-        return null;
-    }*/
 }

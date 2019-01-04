@@ -1,14 +1,12 @@
-package bgu.spl.net.api.Messages;
+package bgu.spl.net.api.BGSMessages;
 
 import bgu.spl.net.api.BGSMessage;
-
-import java.io.Serializable;
 
 public class ErrorMessage extends BGSMessage {
 
     // fields
 
-    private short messageOpCope;
+    private final short messageOpCope;
 
     // constructor
 

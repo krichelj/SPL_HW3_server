@@ -1,10 +1,7 @@
 package bgu.spl.net.api;
 
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.bidi.ConnectionHandler;
-
-import java.io.IOException;
-import java.util.LinkedList;
+import bgu.spl.net.srv.BlockingConnectionHandler;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** This implementation should map a unique ID for each active client
@@ -17,49 +14,55 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <T>
  */
 
-@SuppressWarnings("unchecked") // suppress unchecked assignment warnings
+@SuppressWarnings("WeakerAccess") // suppress weaker access warnings
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
-    private ConcurrentHashMap<Integer,ConnectionHandler<T>> handlersMap; // a concurrent data structure for thread-safety
+    private ConcurrentHashMap<Integer,BlockingConnectionHandler<T>> connectedHandlersMap; // a concurrent data structure for thread-safety
 
-    public ConnectionsImpl () {
+    public ConnectionsImpl(){
 
-        handlersMap = new ConcurrentHashMap<>(); // a hash map of a client ID and its ConnectionHandler
+        connectedHandlersMap = new ConcurrentHashMap<>(); // a hash map of a client ID and its ConnectionHandler
     }
 
     @Override
     public boolean send(int connectionId, T msg) {
 
-        handlersMap.get(connectionId).send(msg);
+        boolean outcome = false;
 
-        return false;
+        if (getClient(connectionId) != null) { // sends the message if the client is connected
+            getClient(connectionId).send(msg);
+            outcome = true;
+        }
+
+        return outcome;
     }
 
     @Override
     public void broadcast(T msg) {
 
-        handlersMap.forEach((connectionId, connectionHandler) -> connectionHandler.send(msg));
+        connectedHandlersMap.forEach((connectionId, connectionHandler) -> connectionHandler.send(msg));
     }
 
     @Override
     public void disconnect(int connectionId) {
 
-        try {
-            handlersMap.get(connectionId).close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        handlersMap.remove(connectionId);
+        connectedHandlersMap.get(connectionId).disconnect();
+        connectedHandlersMap.remove(connectionId);
     }
 
-    public void addClient (int connectionId, ConnectionHandler<T> connectionHandler){
+    public void connect(int connectionId, BlockingConnectionHandler<T> connectionHandler){
 
-        handlersMap.put(connectionId, connectionHandler);
+        connectedHandlersMap.put(connectionId, connectionHandler);
     }
 
-    public ConnectionHandler<T> getClient (int connectionId){
+    public BlockingConnectionHandler<T> getClient(int connectionId){
 
-        return handlersMap.get(connectionId);
+        return connectedHandlersMap.get(connectionId);
+    }
+
+    public void logUserIn(int connectionId, User userToLogIn) {
+
+        connectedHandlersMap.get(connectionId).setCurrentActiveUser(userToLogIn);
     }
 }
