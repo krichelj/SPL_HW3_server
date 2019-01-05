@@ -19,12 +19,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
+    // fields
+
     private ConcurrentHashMap<Integer,ConnectionHandler<T>> connectedHandlersMap; // a concurrent data structure for thread-safety
+
+    // constructor
 
     public ConnectionsImpl(){
 
         connectedHandlersMap = new ConcurrentHashMap<>(); // a hash map of a client ID and its ConnectionHandler
     }
+
+    // methods
 
     @Override
     public boolean send(int connectionId, T msg) {
@@ -59,26 +65,5 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public ConnectionHandler<T> getClient(int connectionId){
 
         return connectedHandlersMap.get(connectionId);
-    }
-
-    public void logUserIn(int connectionId, User userToLogIn) {
-
-        ((BlockingConnectionHandler<T>) connectedHandlersMap.get(connectionId)).setCurrentActiveUser(userToLogIn);
-    }
-
-    public int getNumOfConnectionForLoggedInUser(User user){
-
-        int numOfConnection = 0;
-
-        for (int currentConnectionNum : connectedHandlersMap.keySet())
-
-            if (((BlockingConnectionHandler<T>) connectedHandlersMap.get(currentConnectionNum))
-                    .getCurrentActiveUser().getUsername().equals(user.getUsername())) {
-
-                numOfConnection = currentConnectionNum;
-                break;
-            }
-
-        return numOfConnection;
     }
 }

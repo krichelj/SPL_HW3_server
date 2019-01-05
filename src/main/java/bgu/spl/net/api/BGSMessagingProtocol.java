@@ -4,8 +4,8 @@ import bgu.spl.net.api.BGSMessages.*;
 import bgu.spl.net.api.BGSSavedMessages.PM;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.BlockingConnectionHandler;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -19,6 +19,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
     private ConnectionsImpl<BGSMessage> currentServerConnections;
     private final BGSUsers currentServerUsers;
     private boolean shouldTerminate;
+    private static final ConcurrentHashMap<Integer,String> connectionIDsAndLoggedInUsers = new ConcurrentHashMap<>();
 
     // constructor
 
@@ -41,18 +42,20 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
     public void process(BGSMessage message) {
 
         short currentOpCode = message.getOpCode(); // the current op code
-        BlockingConnectionHandler<BGSMessage> currentConnection = (BlockingConnectionHandler<BGSMessage>) currentServerConnections.getClient(connectionId);
 
         if (currentOpCode == 1){ // RegisterMessage
 
             User userToRegister = ((RegisterMessage) message).getUserToRegister();
 
-            // checks if the user is already registered or a password of zero length
-            if (currentServerUsers.isUserRegistered(userToRegister) || userToRegister.getPassword().length() == 0)
-                sendError(currentOpCode); // sends an Error message for the output
-            else { // the user is not currently registered
-                currentServerUsers.registerUser(userToRegister); // register the user
-                sendRegularAck(currentOpCode); // create an Ack message for the output
+            synchronized (currentServerUsers) { // synchronize the database to prevent users with the same name to register concurrently
+
+                // checks if the user is already registered or a password of zero length
+                if (currentServerUsers.isUserRegistered(userToRegister) || userToRegister.getPassword().length() == 0)
+                    sendError(currentOpCode); // sends an Error message for the output
+                else { // the user is not currently registered
+                    currentServerUsers.registerUser(userToRegister); // register the user
+                    sendRegularAck(currentOpCode); // create an Ack message for the output
+                }
             }
         }
 
@@ -60,42 +63,49 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
             User userToLogin = currentServerUsers.getRegisteredUser(((LoginMessage) message).getUserToLogin().getUsername());
 
+            // synchronize the database during the login procedure to prevent two users
+            // from logging in concurrently with the same username or the same client
+            synchronized (currentServerUsers) {
 
-            // checks if there is a user logged into the current connection, if the user is already logged in or typed in a wrong password
-            if (currentConnection.hasUserLoggedIn() || userToLogin == null ||
-                    currentServerUsers.isUserLoggedIn(userToLogin) || !currentServerUsers.isPasswordValid(userToLogin))
-                sendError(currentOpCode);
-            else {
-                currentServerUsers.logUserIn(userToLogin); // logs the user in
-                currentServerConnections.logUserIn(connectionId, userToLogin); // updates the connection's current active user
-                sendRegularAck(currentOpCode);
-
-                ConcurrentLinkedQueue<BGSSavedMessage> unreadMessages = currentServerUsers.getUserUnreadMessages(userToLogin.getUsername());
+                // checks if the user is not registered or there is a user logged into the current connection
+                // or if the user is already logged in or typed in a wrong password
+                if (userToLogin == null || BGSMessagingProtocol.connectionIDsAndLoggedInUsers.containsKey(connectionId) ||
+                        currentServerUsers.isUserLoggedIn(userToLogin) || !currentServerUsers.isPasswordValid(userToLogin))
+                    sendError(currentOpCode);
+                else {
+                    currentServerUsers.logUserIn(userToLogin); // logs the user in
+                    BGSMessagingProtocol.connectionIDsAndLoggedInUsers.put(connectionId,userToLogin.getUsername()); // updates the connection's current active user
+                    sendRegularAck(currentOpCode);
+                    ConcurrentLinkedQueue<BGSSavedMessage> unreadMessages = currentServerUsers.getUserUnreadMessages(userToLogin.getUsername());
                     
-                while (!unreadMessages.isEmpty()) {
+                    while (!unreadMessages.isEmpty()) {
 
-                    BGSSavedMessage currentUnreadMessage = unreadMessages.poll();
+                        BGSSavedMessage currentUnreadMessage = unreadMessages.poll();
 
-                    sendNotification(userToLogin, currentServerUsers.getRegisteredUser(currentUnreadMessage.getSenderUsername()),
-                            currentUnreadMessage.getMessageType(), currentUnreadMessage.getContent());
+                        sendNotification(userToLogin, currentServerUsers.getRegisteredUser(currentUnreadMessage.getSenderUsername()),
+                                currentUnreadMessage.getMessageType(), currentUnreadMessage.getContent());
+                    }
                 }
             }
-
         }
 
-        else if (currentConnection.hasUserLoggedIn()) { // checks if there's a user logged in to the current connection handler
+        else if (BGSMessagingProtocol.connectionIDsAndLoggedInUsers.containsKey(connectionId)) { // checks if there's a user logged in to the current connection handler
 
-            User currentActiveUser = currentConnection.getCurrentActiveUser();
+            User currentActiveUser = currentServerUsers.getRegisteredUser(BGSMessagingProtocol.connectionIDsAndLoggedInUsers.get(connectionId));
             String currentActiveUserName = currentActiveUser.getUsername();
 
             if (currentOpCode == 3){ // LogoutMessage
 
-                if (!currentServerUsers.isUserLoggedIn(currentActiveUser))  // checks if the user is not logged in
-                    sendError(currentOpCode);
-                else {
-                    currentServerUsers.logUserOut(currentActiveUser); // logs the user out
-                    if (sendRegularAck(currentOpCode))
-                        currentServerConnections.disconnect(connectionId); // disconnects the current connection
+                // synchronize the database during the logout procedure to prevent sending messages while performing logout
+                synchronized (currentServerUsers) {
+                    if (!currentServerUsers.isUserLoggedIn(currentActiveUser))  // checks if the user is not logged in
+                        sendError(currentOpCode);
+                    else {
+                        currentServerUsers.logUserOut(currentActiveUser); // logs the user out
+                        BGSMessagingProtocol.connectionIDsAndLoggedInUsers.remove(connectionId); // remove the connection from the active ones
+                        if (sendRegularAck(currentOpCode))
+                            currentServerConnections.disconnect(connectionId); // disconnects the current connection
+                    }
                 }
             }
 
@@ -106,10 +116,14 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
                 if (currentServerUsers.isUserLoggedIn(currentActiveUser)) { // check if the user is logged in
 
-                    if (messageToProcess.getFollowOrUnfollow() == 0)  // in case the user wants to follow
-                        usersSuccessfullyActedUpon = currentServerUsers.followUsers(currentActiveUser, usersToActUpon);
-                    else // in case the user wants to unfollow
-                        usersSuccessfullyActedUpon = currentServerUsers.unfollowUsers(currentActiveUser, usersToActUpon);
+                    // synchronize the database during the follow or unfollow procedure to receive a reliable status
+                    // of the users' conditions
+                    synchronized (currentServerUsers) {
+                        if (messageToProcess.getFollowOrUnfollow() == 0)  // in case the user wants to follow
+                            usersSuccessfullyActedUpon = currentServerUsers.followUsers(currentActiveUser, usersToActUpon);
+                        else // in case the user wants to unfollow
+                            usersSuccessfullyActedUpon = currentServerUsers.unfollowUsers(currentActiveUser, usersToActUpon);
+                    }
                 }
 
                 if (usersSuccessfullyActedUpon.size() > 0)
@@ -126,15 +140,19 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 if (currentServerUsers.isUserLoggedIn(currentActiveUser)) {
 
                     String postContent = messageToProcess.getContent(); // get the post content
-
                     LinkedList<String> additionalUsersList = messageToProcess.getAdditionalUsersList();
-                    LinkedList<User> usersToSendNotification = currentServerUsers.addPostToUserAndHisFollowersList
-                                    (currentActiveUserName, postContent, additionalUsersList);
+
+                    // synchronize the database during the post message procedure to receive a reliable status
+                    // of the users' conditions
+                    synchronized (currentServerUsers) {
+
+                        LinkedList<User> usersToSendNotification = currentServerUsers.addPostToUserAndHisFollowersList
+                                (currentActiveUserName, postContent, additionalUsersList);
+                        for (User currentUserToSendNotification : usersToSendNotification)
+                            sendNotification(currentUserToSendNotification, currentActiveUser, '1', postContent);
+                    }
 
                     sendRegularAck(currentOpCode);
-
-                    for (User currentUserToSendNotification : usersToSendNotification)
-                        sendNotification(currentUserToSendNotification,currentActiveUser,'1',postContent);
                 }
 
                 else
@@ -148,14 +166,20 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
                 if (currentServerUsers.isUserLoggedIn(currentActiveUser) && currentServerUsers.isUserRegistered(receiverUsername)) {
 
-                    currentServerUsers.addPMToSenderAndReceiver(currentActiveUserName, receiverUsername, content);
-                    sendRegularAck(currentOpCode);
+                    // synchronize the database during the post PM procedure to receive a reliable status
+                    // of the users' conditions
+                    synchronized (currentServerUsers) {
 
-                    if (currentServerUsers.isUserLoggedIn(receiverUsername))
-                        sendNotification(currentServerUsers.getRegisteredUser(receiverUsername),
-                            currentActiveUser,'0',content);
-                    else
-                        currentServerUsers.addUnreadPM(new PM(currentActiveUser.getUsername(),receiverUsername,content));
+                        currentServerUsers.addPMToSenderAndReceiver(currentActiveUserName, receiverUsername, content);
+
+                        if (currentServerUsers.isUserLoggedIn(receiverUsername))
+                            sendNotification(currentServerUsers.getRegisteredUser(receiverUsername),
+                                    currentActiveUser, '0', content);
+                        else
+                            currentServerUsers.addUnreadPM(new PM(currentActiveUser.getUsername(), receiverUsername, content));
+                    }
+
+                    sendRegularAck(currentOpCode);
                 }
                 else
                     sendError(currentOpCode);
@@ -206,7 +230,21 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
     private void sendNotification(User userToSend, User userWhoSends, char messageType, String content){
 
-        currentServerConnections.send(currentServerConnections.getNumOfConnectionForLoggedInUser(userToSend),
+        currentServerConnections.send(getNumOfConnectionForLoggedInUser(userToSend),
                 new NotificationMessage(messageType, userWhoSends.getUsername(), content));
+    }
+
+    private int getNumOfConnectionForLoggedInUser(User user){
+
+        int numOfConnection = 0;
+
+        for (int currentConnectionNum : BGSMessagingProtocol.connectionIDsAndLoggedInUsers.keySet())
+            if (BGSMessagingProtocol.connectionIDsAndLoggedInUsers.get(currentConnectionNum).equals(user.getUsername())) {
+
+                numOfConnection = currentConnectionNum;
+                break;
+            }
+
+        return numOfConnection;
     }
 }

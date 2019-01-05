@@ -1,7 +1,6 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.User;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
@@ -20,16 +19,12 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private BufferedInputStream inputStream;
     private BufferedOutputStream outputStream;
     private volatile boolean connected = true;
-    private User currentActiveUser;
-    private boolean hasUserLoggedIn;
 
     public BlockingConnectionHandler(Socket clientSocket, MessageEncoderDecoder<T> currentEncoderDecoder, BidiMessagingProtocol<T> currentProtocol) {
 
         this.currentProtocol = currentProtocol;
         this.currentEncoderDecoder = currentEncoderDecoder;
         this.clientSocket = clientSocket;
-        hasUserLoggedIn = false;
-        currentActiveUser = null;
     }
 
     @Override
@@ -47,69 +42,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
                 T currentRawReadMessage = currentEncoderDecoder.decodeNextByte((byte) input);
 
-                if (currentRawReadMessage != null) {
-
-                    /*BGSMessage currentReadMessage = (BGSMessage) currentRawReadMessage;
-                    Short currentOpcode = currentReadMessage.getOpCode();
-
-                    if (currentOpcode == 1) { // RegisterMessage
-
-                        RegisterMessage messageToProcess = (RegisterMessage) currentReadMessage;
-                        System.out.println(messageToProcess.getUserToRegister().getUsername() + " wants to register with password: "
-                            + messageToProcess.getUserToRegister().getPassword());
-                    }
-
-                    else if (currentOpcode == 2){ // LoginMessage
-
-                        LoginMessage messageToProcess = (LoginMessage) currentReadMessage;
-                        System.out.println(messageToProcess.getUserToLogin().getUsername() + " wants to login with password: "
-                                + messageToProcess.getUserToLogin().getPassword());
-                    }
-
-                    else if (currentOpcode == 3) // LogoutMessage
-                        System.out.println("A user wants to logout");
-
-                    else if (currentOpcode == 4) { // FollowUnfollowMessage
-
-                        FollowUnfollowMessage messageToProcess = (FollowUnfollowMessage) currentReadMessage;
-                        String followOrUnfollow;
-
-                        if (messageToProcess.getFollowOrUnfollow() == 0)
-                            followOrUnfollow = "follow ";
-                        else
-                            followOrUnfollow = "unfollow ";
-
-                        System.out.println(currentActiveUser.getUsername() + " wants to " + followOrUnfollow +
-                                messageToProcess.getNumOfUsers() + " users");
-                    }
-
-                    else if (currentOpcode == 5) { // PostMessage
-
-                        PostMessage messageToProcess = (PostMessage) currentReadMessage;
-
-                        System.out.println(currentActiveUser.getUsername() + " wants to post the post: " +
-                                messageToProcess.getContent());
-                    }
-
-                    else if (currentOpcode == 6) { // PMMessage
-
-                        PMMessage messageToProcess = (PMMessage) currentReadMessage;
-
-                        System.out.println(currentActiveUser.getUsername() + " wants to PM to " +
-                                messageToProcess.getReceiverUsername() + " the PM: " + messageToProcess.getContent());
-                    }
-
-                    else if (currentOpcode == 7)  // PMMessage
-                        System.out.println(currentActiveUser.getUsername() + " wants to see the user list");
-                    else if (currentOpcode == 8){
-
-                        StatsMessage messageToProcess = (StatsMessage) currentReadMessage;
-
-                        System.out.println(currentActiveUser.getUsername() + " wants to see info about " +  messageToProcess.getUsername());
-                    }*/
-
+                if (currentRawReadMessage != null)
                     currentProtocol.process(currentRawReadMessage);
-                }
             }
 
         } catch (IOException ex) {
@@ -140,21 +74,5 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     public void startProtocol(int connectionId, Connections<T> connections){
 
         currentProtocol.start(connectionId,connections);
-    }
-
-    public void setCurrentActiveUser(User currentActiveUser) {
-
-        this.currentActiveUser = currentActiveUser;
-        hasUserLoggedIn = true;
-    }
-
-    public User getCurrentActiveUser() {
-
-        return currentActiveUser;
-    }
-
-    public boolean hasUserLoggedIn() {
-
-        return hasUserLoggedIn;
     }
 }

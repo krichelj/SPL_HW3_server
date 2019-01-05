@@ -14,8 +14,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class BGSUsers {
 
-    // all maps are concurrent and therefore WE DO NOT HAVE TO WORRY ABOUT CONCURRENCY
-
     private final Map<String, User> registeredUsers;
     private final ConcurrentHashMap<String,User> loggedInUsers;
     private final ConcurrentHashMap<User,LinkedList<User>> registeredUsersAndFollowings, registeredUsersAndFollowers;
