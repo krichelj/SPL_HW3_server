@@ -7,8 +7,10 @@ public class ServerRunner {
 
     public static void main (String[] args){
 
+        BGSUsers currentServerUsers = new BGSUsers();
+
         Server.threadPerClient(7777,
-                () -> new BGSMessagingProtocol(new BGSUsers()), //protocol factory
+                () -> new BGSMessagingProtocol(currentServerUsers), //protocol factory
                 BGSMessageEncoderDecoder::new  //message encoder decoder factory
         ).serve();
     }

@@ -8,13 +8,13 @@ import java.util.LinkedList;
 
 @SuppressWarnings("FieldCanBeLocal")
 
-public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMessage> {
+public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessage> {
 
-    private byte[] shortBytesArray = new byte[2], stringBytesArray = new byte[1 << 10];
-    private int index = 0, stringBytesArrayIndex = 0;
+    private byte[] shortBytesArray = new byte[2], stringBytesArray1 = new byte[1 << 10], stringBytesArray2 = new byte[1 << 10];
+    private int index = 0, stringBytesArrayIndex1 = 0, stringBytesArrayIndex2 = 0 ;
     private short currentOpCode = 0, numOfUsers;
     private short followOrUnfollow;
-    private String firstString, secondString, addedUser;
+    private String firstString, secondString;
     private final byte[] zeroByteArray = {(byte) '\0'};
     private LinkedList<String> userNameList = new LinkedList<>();
 
@@ -28,13 +28,19 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
             shortBytesArray[index++] = nextByte;
 
             if (index == 2){ // means we've finished reading the opcode and need to record it
+
                 currentOpCode = shortBytesArrayToShort();
-                index = 0;
-                if (currentOpCode == 3){ // Logout Message
+
+                if (currentOpCode == 3) { // Logout Message
                     outputMessage = new LogoutMessage();
+                    currentOpCode = 0;
                 }
-                else if (currentOpCode == 7) // user list message
+                else if (currentOpCode == 7) { // user list message
                     outputMessage = new UserListMessage();
+                    currentOpCode = 0;
+                }
+
+                index = 0;
             }
         }
 
@@ -43,19 +49,19 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
            if (index == 0) { // means we haven't recorded the first string yet
 
                if (nextByte != 0)  // means we haven't finished reading the first string yet
-                   pushByte(nextByte);
+                   pushByte(nextByte,1);
                else { // means we've finished reading the first string
-                   firstString = popString();
+                   firstString = popString(1);
                    index++;
                }
            }
            else if (index == 1) { // means we recorded the first string but haven't recorded the second string yet
 
                 if (nextByte != 0) // means we haven't finished reading the second string yet
-                    pushByte(nextByte);
+                    pushByte(nextByte,1);
                 else {// means we've finished reading the second string
 
-                    secondString = popString();
+                    secondString = popString(1);
 
                     if (currentOpCode == 1)
                         outputMessage = new RegisterMessage(firstString, secondString);
@@ -71,7 +77,7 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
             }
         }
 
-        else if (currentOpCode == 4){ // follow unfollow message
+        else if (currentOpCode == 4){ // FollowUnfollowMessage or UserListMessage
 
             if (index == 1) {   // means we haven't read the followOrUnfollow field yet
                 followOrUnfollow = (short) nextByte;
@@ -84,9 +90,9 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
             else if (index > 3) { // // means we're reading the userNameList field
 
                 if (nextByte != 0) // means we haven't read the current user name yet
-                    pushByte(nextByte);
+                    pushByte(nextByte,1);
                 else { // means we've finished reading the current user name
-                    firstString = popString();
+                    firstString = popString(1);
                     userNameList.add(firstString);
                     firstString = "";
 
@@ -94,7 +100,7 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
                         outputMessage = new FollowUnfollowMessage(followOrUnfollow, numOfUsers, userNameList);
                         index = 0;
                         userNameList = new LinkedList<>();
-
+                        currentOpCode = 0;
                     }
                 }
             }
@@ -104,105 +110,143 @@ public class BGSMessageEncoderDecoder<T> implements MessageEncoderDecoder<BGSMes
 
         else if (currentOpCode == 5){ // PostMessage
 
-            char currentChar = '\0';
+            if (nextByte != 0) { // means we haven't finished reading the content
 
-            if (index == 0 || index == 1 ) {
-                pushByte(nextByte);
-                index++;
+                if (index == 0) { // means we're not reading a username
 
-                if (index == 1) // means we are finished reading the current char
-                    currentChar = popString().charAt(0);
-            }
+                    pushByte(nextByte,1);
 
-            if (currentChar == '\0' || index > 0 ) { // means we haven't finished reading the content field or not finished writing a user name
-
-                if (currentChar == '@'){ // means we are about to read a user name
-
-                    index++;
+                    if (nextByte == 64) // means we're reading the '@' char
+                        index++;
                 }
-                else {
+                else { // means we're reading a username
 
-                    if (index == 0){ // means we are not reading a user name
-                        firstString += (char) nextByte;
+                    if (nextByte != 32) { // means we haven't finished reading the username
+                        pushByte(nextByte,1);
+                        pushByte(nextByte, 2);
                     }
-                    else { // means we are in the process of reading a user name
-                        if (currentChar == ' ' || currentChar == '\0'){ // means we are finished reading the user name
-                            userNameList.add(addedUser);
-                            index = 0;
-                        }
-                        else // means we are currently reading a user name
-                            addedUser+= (char) nextByte;
+
+                    else { // means we've finished reading the username
+                        pushByte(nextByte,1);
+                        userNameList.add(popString(2));
+                        index = 0;
                     }
                 }
             }
-            else { // means we've finished reading the content field
+            else { // we've reached the end of the content
 
-                if (currentOpCode == 5) {
-                    if (userNameList.isEmpty())
-                        outputMessage = new PostMessage(firstString);
-                    else
-                        outputMessage = new PostMessage(firstString, userNameList);
+                if (index > 0){ // if we finished the line when a user was read
+
+                    userNameList.add(popString(2));
+                    index = 0;
                 }
-                firstString = "";
+
+                if (userNameList.isEmpty())
+                    outputMessage = new PostMessage(popString(1));
+                else
+                    outputMessage = new PostMessage(popString(1), userNameList);
+
+                currentOpCode = 0;
+                userNameList = new LinkedList<>();
             }
         }
 
         else if (currentOpCode == 8){ // StatsMessage
 
             if (nextByte != 0) // means we haven't read the current user name yet
-                pushByte(nextByte);
+                pushByte(nextByte,1);
             else { // means we've finished reading the current user name
-                firstString = popString();
+                firstString = popString(1);
                 outputMessage = new StatsMessage(firstString);
                 firstString = "";
+                currentOpCode = 0;
             }
         }
 
         return outputMessage; // returns null if not assigned
     }
 
-    private void pushByte(byte nextByte) {
+    private void pushByte(byte nextByte, int index) {
 
-        if (stringBytesArrayIndex >= stringBytesArray.length)
-            stringBytesArray = Arrays.copyOf(stringBytesArray, stringBytesArrayIndex * 2);
+        if (index == 1) {
 
-        stringBytesArray[stringBytesArrayIndex++] = nextByte;
+            if (stringBytesArrayIndex1 >= stringBytesArray1.length)
+                stringBytesArray1 = Arrays.copyOf(stringBytesArray1, stringBytesArrayIndex1 * 2);
+
+            stringBytesArray1[stringBytesArrayIndex1++] = nextByte;
+        }
+        else{
+            if (stringBytesArrayIndex2 >= stringBytesArray2.length)
+                stringBytesArray2 = Arrays.copyOf(stringBytesArray2, stringBytesArrayIndex2 * 2);
+
+            stringBytesArray2[stringBytesArrayIndex2++] = nextByte;
+
+        }
     }
 
-    private String popString() {
+    private String popString(int index) {
 
-        String resultString = new String(stringBytesArray, 0, stringBytesArrayIndex, StandardCharsets.UTF_8);
-        stringBytesArrayIndex = 0;
-        stringBytesArray = new byte[1 << 10];
+        String resultString;
+
+        if (index == 1) {
+            resultString = new String(stringBytesArray1, 0, stringBytesArrayIndex1, StandardCharsets.UTF_8);
+            stringBytesArrayIndex1 = 0;
+            stringBytesArray1 = new byte[1 << 10];
+        }
+        else {
+            resultString = new String(stringBytesArray2, 0, stringBytesArrayIndex2, StandardCharsets.UTF_8);
+            stringBytesArrayIndex2 = 0;
+            stringBytesArray2 = new byte[1 << 10];
+
+        }
         return resultString;
     }
 
     @Override
     public byte[] encode(BGSMessage message) {
 
-        byte[] outputByteArray = null;
+        byte[] outputBytesArray = null;
         short opCode = message.getOpCode();
         byte[] outputOpCodeBytesArray = shortToBytesArray(opCode);
 
         if (opCode == 9) { // NotificationMessage
 
-            byte[] messageTypeByte = {(byte) ((NotificationMessage) message).getMessageType()};
-            outputByteArray = concatenateByteArrays (outputOpCodeBytesArray, messageTypeByte, ((NotificationMessage) message).getPostingUser().getBytes(),
-                    zeroByteArray, ((NotificationMessage) message).getContent().getBytes(), zeroByteArray);
+            NotificationMessage currentAckMessage = (NotificationMessage) message;
+
+            byte[] messageTypeByte = {(byte) currentAckMessage.getMessageType()};
+            outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, messageTypeByte, currentAckMessage.getPostingUser().getBytes(),
+                    zeroByteArray, currentAckMessage.getContent().getBytes(), zeroByteArray);
 
         }
         else if (opCode == 10){ // AckMessage
 
-            outputByteArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray(((AckMessage) message).getMessageOpCope()));
+            AckMessage currentAckMessage = (AckMessage) message;
+            short messageOpCope = currentAckMessage.getMessageOpCope();
+
+            if (messageOpCope == 4 || messageOpCope == 7){
+
+                outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray(messageOpCope),
+                        shortToBytesArray(currentAckMessage.getNumOfUsers()));
+
+                for (String currentUserName : currentAckMessage.getUserNameList())
+                    outputBytesArray = concatenateByteArrays (outputBytesArray, currentUserName.getBytes(), zeroByteArray);
+            }
+            else if (messageOpCope == 8){
+
+                outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray(messageOpCope),
+                        shortToBytesArray(currentAckMessage.getNumOfPosts()), shortToBytesArray(currentAckMessage.getNumOfFollowers()),
+                        shortToBytesArray(currentAckMessage.getNumOfFollowing()));
+            }
+            else
+                outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray((messageOpCope)));
 
         }
-        else if (opCode == 11){ // ErrorMessage
+        else if (opCode == 11) // ErrorMessage
+            outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray(((ErrorMessage) message).getMessageOpCope()));
 
-            outputByteArray = concatenateByteArrays (outputOpCodeBytesArray, shortToBytesArray(((ErrorMessage) message).getMessageOpCope()));
 
-        }
 
-        return outputByteArray;
+        return outputBytesArray;
     }
 
     private short shortBytesArrayToShort() {

@@ -6,7 +6,7 @@ public class PMMessage extends BGSMessage {
 
     // fields
 
-    private final String receiverUsername, PMcontent;
+    private final String receiverUsername, content;
 
     // constructor
 
@@ -14,7 +14,7 @@ public class PMMessage extends BGSMessage {
 
         super((short) 6);
         this.receiverUsername = receiverUsername;
-        this.PMcontent = content;
+        this.content = content;
     }
 
     // methods
@@ -24,9 +24,9 @@ public class PMMessage extends BGSMessage {
         return receiverUsername;
     }
 
-    public String getPMcontent() {
+    public String getContent() {
 
-        return PMcontent;
+        return content;
     }
 
 

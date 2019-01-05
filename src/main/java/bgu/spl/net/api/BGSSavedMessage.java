@@ -5,7 +5,7 @@ public abstract class BGSSavedMessage {
     // fields
 
     private final String senderUsername, content;
-    private boolean wasRead;
+    protected char messageType;
 
     // constructor
 
@@ -13,7 +13,6 @@ public abstract class BGSSavedMessage {
 
         this.senderUsername = senderUsername;
         this.content = content;
-        wasRead = false;
     }
 
     // methods
@@ -26,5 +25,10 @@ public abstract class BGSSavedMessage {
     public String getContent() {
 
         return content;
+    }
+
+    public char getMessageType(){
+
+        return messageType;
     }
 }

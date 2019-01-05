@@ -14,6 +14,7 @@ public class StatsMessage extends BGSMessage {
     public StatsMessage(String username) {
 
         super((short) 8);
+        this.username = username;
     }
 
     // methods

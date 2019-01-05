@@ -9,5 +9,6 @@ public class Post extends BGSSavedMessage {
     public Post(String senderUsername, String content) {
 
         super(senderUsername, content);
+        messageType = '1';
     }
 }

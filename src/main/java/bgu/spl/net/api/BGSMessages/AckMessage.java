@@ -9,7 +9,7 @@ public class AckMessage extends BGSMessage {
     // fields
 
     private final short messageOpCope;
-    private int numOfUsers, numOfPosts, numOfFollowers, numOfFollowing;
+    private short numOfUsers, numOfPosts, numOfFollowers, numOfFollowing;
     private LinkedList<String> userNameList;
 
     // constructors
@@ -20,7 +20,7 @@ public class AckMessage extends BGSMessage {
         this.messageOpCope = messageOpCope;
     }
 
-    public AckMessage(short messageOpCope, int numOfUsers, LinkedList<String> userNameList) { // UserListMessage Ack
+    public AckMessage(short messageOpCope, short numOfUsers, LinkedList<String> userNameList) { // FollowUnfollowMessage or UserListMessage Ack
 
         super((short) 10);
         this.messageOpCope = messageOpCope;
@@ -28,7 +28,7 @@ public class AckMessage extends BGSMessage {
         this.userNameList = userNameList;
     }
 
-    public AckMessage(short messageOpCope, int numOfPosts, int numOfFollowers, int numOfFollowing) { // UserListMessage Ack
+    public AckMessage(short messageOpCope, short numOfPosts, short numOfFollowers, short numOfFollowing) { // Stats Ack
 
         super((short) 10);
         this.messageOpCope = messageOpCope;
@@ -43,5 +43,30 @@ public class AckMessage extends BGSMessage {
     public short getMessageOpCope() {
 
         return messageOpCope;
+    }
+
+    public short getNumOfUsers() {
+
+        return numOfUsers;
+    }
+
+    public LinkedList<String> getUserNameList() {
+
+        return userNameList;
+    }
+
+    public short getNumOfPosts() {
+
+        return numOfPosts;
+    }
+
+    public short getNumOfFollowers() {
+
+        return numOfFollowers;
+    }
+
+    public short getNumOfFollowing() {
+
+        return numOfFollowing;
     }
 }

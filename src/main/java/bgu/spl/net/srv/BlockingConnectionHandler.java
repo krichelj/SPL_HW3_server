@@ -66,11 +66,10 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
                         LoginMessage messageToProcess = (LoginMessage) currentReadMessage;
                         System.out.println(messageToProcess.getUserToLogin().getUsername() + " wants to login with password: "
                                 + messageToProcess.getUserToLogin().getPassword());
-
                     }
 
                     else if (currentOpcode == 3) // LogoutMessage
-                        System.out.println(currentActiveUser.getUsername() + " wants to logout");
+                        System.out.println("A user wants to logout");
 
                     else if (currentOpcode == 4) { // FollowUnfollowMessage
 
@@ -85,6 +84,32 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
                         System.out.println(currentActiveUser.getUsername() + " wants to " + followOrUnfollow +
                                 messageToProcess.getNumOfUsers() + " users");
                     }
+
+                    else if (currentOpcode == 5) { // PostMessage
+
+                        PostMessage messageToProcess = (PostMessage) currentReadMessage;
+
+                        System.out.println(currentActiveUser.getUsername() + " wants to post the post: " +
+                                messageToProcess.getContent());
+                    }
+
+                    else if (currentOpcode == 6) { // PMMessage
+
+                        PMMessage messageToProcess = (PMMessage) currentReadMessage;
+
+                        System.out.println(currentActiveUser.getUsername() + " wants to PM to " +
+                                messageToProcess.getReceiverUsername() + " the PM: " + messageToProcess.getContent());
+                    }
+
+                    else if (currentOpcode == 7)  // PMMessage
+                        System.out.println(currentActiveUser.getUsername() + " wants to see the user list");
+                    else if (currentOpcode == 8){
+
+                        StatsMessage messageToProcess = (StatsMessage) currentReadMessage;
+
+                        System.out.println(currentActiveUser.getUsername() + " wants to see info about " +  messageToProcess.getUsername());
+                    }
+
 
                     currentProtocol.process(currentRawReadMessage);
                 }

@@ -27,7 +27,7 @@ public class FollowUnfollowMessage extends BGSMessage {
         return followOrUnfollow;
     }
 
-    public LinkedList<String> getUsers (){
+    public LinkedList<String> getUsers(){
 
         return userNameList;
     }

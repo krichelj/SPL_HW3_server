@@ -14,6 +14,7 @@ public class PM extends BGSSavedMessage {
 
         super(senderUsername,content);
         this.receiverUsername = receiverUsername;
+        messageType = '0';
     }
 
     // methods
@@ -22,7 +23,4 @@ public class PM extends BGSSavedMessage {
 
         return receiverUsername;
     }
-
-
-
 }
