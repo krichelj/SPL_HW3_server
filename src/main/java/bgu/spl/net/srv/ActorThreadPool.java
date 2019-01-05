@@ -11,6 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@SuppressWarnings("WeakerAccess") // suppress weaker access warnings
+
 public class ActorThreadPool {
 
     private final Map<Object, Queue<Runnable>> acts;

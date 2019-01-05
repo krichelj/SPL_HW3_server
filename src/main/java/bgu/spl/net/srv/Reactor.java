@@ -1,19 +1,19 @@
 package bgu.spl.net.srv;
 
+import bgu.spl.net.api.ConnectionsImpl;
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
+@SuppressWarnings({"unchecked" , "WeakerAccess"}) // suppress unchecked assignment and weaker access warnings
+
+/** Changes were marked with "---" before and after the comment
+ * @param <T> generic type of the server
+ */
 public class Reactor<T> implements Server<T> {
 
     private final int port;
@@ -23,6 +23,8 @@ public class Reactor<T> implements Server<T> {
     private Selector selector;
     private Thread selectorThread;
     private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
+    private final ConnectionsImpl connections; // ---keep a reference to an instance of the connections---
+    private static int connectionId = 1; // ---make this field static to support multiple servers---
 
     public Reactor(int numThreads, int port, Supplier<BidiMessagingProtocol<T>> protocolFactory,
             Supplier<MessageEncoderDecoder<T>> readerFactory) {
@@ -31,10 +33,12 @@ public class Reactor<T> implements Server<T> {
         this.port = port;
         this.protocolFactory = protocolFactory;
         this.readerFactory = readerFactory;
+        connections = new ConnectionsImpl(); // --- initiate the connections instance ---
     }
 
     @Override
     public void serve() {
+
 	selectorThread = Thread.currentThread();
         try (Selector selector = Selector.open();
                 ServerSocketChannel serverSock = ServerSocketChannel.open()) {
@@ -83,9 +87,7 @@ public class Reactor<T> implements Server<T> {
         if (Thread.currentThread() == selectorThread) {
             key.interestOps(ops);
         } else {
-            selectorTasks.add(() -> {
-                key.interestOps(ops);
-            });
+            selectorTasks.add(() -> key.interestOps(ops));
             selector.wakeup();
         }
     }
@@ -97,6 +99,8 @@ public class Reactor<T> implements Server<T> {
         clientChan.configureBlocking(false);
         final NonBlockingConnectionHandler<T> handler = new NonBlockingConnectionHandler<>(readerFactory.get(),
                 protocolFactory.get(), clientChan, this);
+        connections.connect(Reactor.connectionId,handler); // --- connect the current reactor using the connections ---
+        handler.startProtocol(Reactor.connectionId++,connections); // --- start the reactor's protocol ---
         clientChan.register(selector, SelectionKey.OP_READ, handler);
     }
 

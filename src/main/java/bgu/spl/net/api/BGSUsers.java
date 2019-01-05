@@ -14,11 +14,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class BGSUsers {
 
+    // all maps are concurrent and therefore WE DO NOT HAVE TO WORRY ABOUT CONCURRENCY
+
     private final Map<String, User> registeredUsers;
     private final ConcurrentHashMap<String,User> loggedInUsers;
     private final ConcurrentHashMap<User,LinkedList<User>> registeredUsersAndFollowings, registeredUsersAndFollowers;
     private final ConcurrentHashMap<User,LinkedList<BGSSavedMessage>> registeredUsersAndSentMessages, registeredUsersAndReceivedMessages;
-    private final ConcurrentHashMap<User, ConcurrentLinkedQueue<BGSSavedMessage>> registeredUsersAndUnreadMessages;
+    private final ConcurrentHashMap<User,ConcurrentLinkedQueue<BGSSavedMessage>> registeredUsersAndUnreadMessages;
 
     // constructor
 
@@ -59,6 +61,11 @@ public class BGSUsers {
     public boolean isUserRegistered(User user){
 
         return user!= null && registeredUsers.containsKey(user.getUsername());
+    }
+
+    public boolean isUserLoggedIn(String username){
+
+        return isUserRegistered(username) && loggedInUsers.containsKey(username);
     }
 
     public boolean isUserLoggedIn(User user){
@@ -158,6 +165,11 @@ public class BGSUsers {
         }
 
         return userNamesToSendNotification;
+    }
+
+    public void addUnreadPM(PM pm){
+
+        registeredUsersAndUnreadMessages.get(registeredUsers.get(pm.getReceiverUsername())).add(pm);
     }
 
     public ConcurrentLinkedQueue<BGSSavedMessage> getUserUnreadMessages(String username){

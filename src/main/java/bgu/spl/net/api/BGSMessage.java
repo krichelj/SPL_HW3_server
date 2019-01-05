@@ -1,5 +1,7 @@
 package bgu.spl.net.api;
 
+@SuppressWarnings("WeakerAccess") // suppress weaker access warnings
+
 public abstract class BGSMessage {
 
     // fields

@@ -1,7 +1,5 @@
 package bgu.spl.net.api.bidi;
 
-import java.io.IOException;
-
 /** This interface should map a unique ID for each active client
  *  connected to the server.
  * @param <T>

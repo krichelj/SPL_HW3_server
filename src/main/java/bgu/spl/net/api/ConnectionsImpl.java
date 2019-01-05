@@ -2,6 +2,7 @@ package bgu.spl.net.api;
 
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.BlockingConnectionHandler;
+import bgu.spl.net.srv.bidi.ConnectionHandler;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** This implementation should map a unique ID for each active client
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
-    private ConcurrentHashMap<Integer,BlockingConnectionHandler<T>> connectedHandlersMap; // a concurrent data structure for thread-safety
+    private ConcurrentHashMap<Integer,ConnectionHandler<T>> connectedHandlersMap; // a concurrent data structure for thread-safety
 
     public ConnectionsImpl(){
 
@@ -47,23 +48,22 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public void disconnect(int connectionId) {
 
-        connectedHandlersMap.get(connectionId).disconnect();
         connectedHandlersMap.remove(connectionId);
     }
 
-    public void connect(int connectionId, BlockingConnectionHandler<T> connectionHandler){
+    public void connect(int connectionId, ConnectionHandler<T> connectionHandler){
 
         connectedHandlersMap.put(connectionId, connectionHandler);
     }
 
-    public BlockingConnectionHandler<T> getClient(int connectionId){
+    public ConnectionHandler<T> getClient(int connectionId){
 
         return connectedHandlersMap.get(connectionId);
     }
 
     public void logUserIn(int connectionId, User userToLogIn) {
 
-        connectedHandlersMap.get(connectionId).setCurrentActiveUser(userToLogIn);
+        ((BlockingConnectionHandler<T>) connectedHandlersMap.get(connectionId)).setCurrentActiveUser(userToLogIn);
     }
 
     public int getNumOfConnectionForLoggedInUser(User user){
@@ -72,12 +72,12 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
         for (int currentConnectionNum : connectedHandlersMap.keySet())
 
-            if (connectedHandlersMap.get(currentConnectionNum).getCurrentActiveUser().getUsername().equals(user.getUsername())) {
+            if (((BlockingConnectionHandler<T>) connectedHandlersMap.get(currentConnectionNum))
+                    .getCurrentActiveUser().getUsername().equals(user.getUsername())) {
 
                 numOfConnection = currentConnectionNum;
                 break;
             }
-
 
         return numOfConnection;
     }

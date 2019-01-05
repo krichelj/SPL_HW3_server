@@ -26,7 +26,7 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<MessageEncoderDecoder<T>> encoderDecoderFactory;
     private ServerSocket serverSocket;
     private ConnectionsImpl<T> currentServerConnections;
-    private static int connectionId = 1;
+    private static int connectionId = 1; // make this field static to support multiple servers
 
     // constructor
 

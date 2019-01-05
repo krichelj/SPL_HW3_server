@@ -1,13 +1,12 @@
 package bgu.spl.net.api;
 
-import java.util.LinkedList;
+@SuppressWarnings("WeakerAccess") // suppress weaker access warnings
 
 public class User {
 
     // fields
 
     private final String username, password;
-    private int loggedInConnectionID;
 
     public User(String username, String password) {
 

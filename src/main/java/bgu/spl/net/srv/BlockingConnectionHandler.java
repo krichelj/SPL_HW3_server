@@ -1,7 +1,5 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.BGSMessage;
-import bgu.spl.net.api.BGSMessages.*;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.User;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
@@ -51,7 +49,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
                 if (currentRawReadMessage != null) {
 
-                    BGSMessage currentReadMessage = (BGSMessage) currentRawReadMessage;
+                    /*BGSMessage currentReadMessage = (BGSMessage) currentRawReadMessage;
                     Short currentOpcode = currentReadMessage.getOpCode();
 
                     if (currentOpcode == 1) { // RegisterMessage
@@ -108,8 +106,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
                         StatsMessage messageToProcess = (StatsMessage) currentReadMessage;
 
                         System.out.println(currentActiveUser.getUsername() + " wants to see info about " +  messageToProcess.getUsername());
-                    }
-
+                    }*/
 
                     currentProtocol.process(currentRawReadMessage);
                 }
@@ -127,11 +124,6 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         clientSocket.close();
         inputStream.close();
         outputStream.close();
-    }
-
-    public void disconnect() {
-
-        connected = false;
     }
 
     @Override
