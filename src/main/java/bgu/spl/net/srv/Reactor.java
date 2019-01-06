@@ -86,8 +86,11 @@ public class Reactor<T> implements Server<T> {
         final SelectionKey key = chan.keyFor(selector);
         if (Thread.currentThread() == selectorThread) {
             key.interestOps(ops);
-        } else {
-            selectorTasks.add(() -> key.interestOps(ops));
+        } else { // updated as the site instructed
+            selectorTasks.add(() -> {
+                if(key.isValid())
+                    key.interestOps(ops);
+            });
             selector.wakeup();
         }
     }

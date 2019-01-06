@@ -58,7 +58,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 }
             }
         }
-
         else if (currentOpCode == 2){ // LoginMessage
 
             User userToLogin = currentServerUsers.getRegisteredUser(((LoginMessage) message).getUserToLogin().getUsername());
@@ -88,7 +87,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 }
             }
         }
-
         else if (BGSMessagingProtocol.connectionIDsAndLoggedInUsers.containsKey(connectionId)) { // checks if there's a user logged in to the current connection handler
 
             User currentActiveUser = currentServerUsers.getRegisteredUser(BGSMessagingProtocol.connectionIDsAndLoggedInUsers.get(connectionId));
@@ -98,6 +96,7 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
 
                 // synchronize the database during the logout procedure to prevent sending messages while performing logout
                 synchronized (currentServerUsers) {
+
                     if (!currentServerUsers.isUserLoggedIn(currentActiveUser))  // checks if the user is not logged in
                         sendError(currentOpCode);
                     else {
@@ -108,7 +107,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                     }
                 }
             }
-
             else if (currentOpCode == 4){ // FollowUnfollowMessage
 
                 FollowUnfollowMessage messageToProcess = (FollowUnfollowMessage) message;
@@ -132,7 +130,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 else
                     sendError(currentOpCode);
             }
-
             else if (currentOpCode == 5){ // PostMessage
 
                 PostMessage messageToProcess = (PostMessage) message;
@@ -158,7 +155,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 else
                     sendError(currentOpCode);
             }
-
             else if (currentOpCode == 6){ // PMMessage
 
                 PMMessage messageToProcess = (PMMessage) message;
@@ -184,7 +180,6 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
                 else
                     sendError(currentOpCode);
             }
-
             else if (currentOpCode == 7){ // UserListMessage
 
                 LinkedList<String> currentlyRegisteredUsers = currentServerUsers.getRegisteredUsers();

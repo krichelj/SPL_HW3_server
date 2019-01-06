@@ -19,6 +19,5 @@ public class ReactorMain {
                 () -> new BGSMessagingProtocol(currentServerUsers),
                 BGSMessageEncoderDecoder::new
         ).serve();
-
     }
 }

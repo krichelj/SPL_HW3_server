@@ -52,7 +52,6 @@ public abstract class BaseServer<T> implements Server<T> {
             while (!Thread.currentThread().isInterrupted()) {
 
                 Socket clientSocket = serverSocket.accept(); // blocks until a connection is made
-                System.out.println("A client has connected!");
 
                 BlockingConnectionHandler<T> currentHandler = new BlockingConnectionHandler(clientSocket, encoderDecoderFactory.get(),
                         protocolFactory.get()); // create a new ConnectionHandler for the client
