@@ -1,5 +1,8 @@
 package bgu.spl.net.api;
 
+/**
+ * An abstract class that represents a message between client and server and vice versa
+ */
 @SuppressWarnings("WeakerAccess") // suppress weaker access warnings
 
 public abstract class BGSMessage {

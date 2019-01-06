@@ -2,7 +2,6 @@ package bgu.spl.net.api;
 
 import bgu.spl.net.api.BGSSavedMessages.PM;
 import bgu.spl.net.api.BGSSavedMessages.Post;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -10,9 +9,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * A class that represents the data structure for the users
+ */
 @SuppressWarnings("WeakerAccess") // suppress weaker access warnings
 
 public class BGSUsers {
+
+    // hash maps for all the required data of the users
 
     private final Map<String, User> registeredUsers;
     private final ConcurrentHashMap<String,User> loggedInUsers;

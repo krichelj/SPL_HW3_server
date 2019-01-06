@@ -6,17 +6,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+/**
+ * This class is in charge of all the encoding and decoding process
+ */
 @SuppressWarnings("FieldCanBeLocal")
 
 public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessage> {
 
+    // fields
+
+    // keep fields of all possible values for the decoding process and initialize them with the initial values
+
     private byte[] shortBytesArray = new byte[2], stringBytesArray1 = new byte[1 << 10], stringBytesArray2 = new byte[1 << 10];
-    private int index = 0, stringBytesArrayIndex1 = 0, stringBytesArrayIndex2 = 0 ;
+    private int index = 0, stringBytesArrayIndex1 = 0, stringBytesArrayIndex2 = 0;
     private short currentOpCode = 0, numOfUsers;
     private short followOrUnfollow;
     private String firstString, secondString;
-    private final byte[] zeroByteArray = {(byte) '\0'};
+    private final byte[] zeroByteArray = {(byte) '\0'}; // keep a singleton of the zero byte
     private LinkedList<String> userNameList = new LinkedList<>();
+
+    // methods
 
     @Override
     public BGSMessage decodeNextByte(byte nextByte) {
@@ -125,10 +134,15 @@ public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessag
                         pushByte(nextByte,1);
                         pushByte(nextByte, 2);
                     }
-
                     else { // means we've finished reading the username
+
                         pushByte(nextByte,1);
-                        userNameList.add(popString(2));
+                        firstString = popString(2);
+
+                        if (!userNameList.contains(firstString))
+                            userNameList.add(firstString);
+
+                        firstString = "";
                         index = 0;
                     }
                 }
@@ -137,7 +151,12 @@ public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessag
 
                 if (index > 0){ // if we finished the line when a user was read
 
-                    userNameList.add(popString(2));
+                    firstString = popString(2);
+
+                    if (!userNameList.contains(firstString))
+                        userNameList.add(firstString);
+
+                    firstString = "";
                     index = 0;
                 }
 
@@ -212,8 +231,8 @@ public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessag
         if (opCode == 9) { // NotificationMessage
 
             NotificationMessage currentAckMessage = (NotificationMessage) message;
-
             byte[] messageTypeByte = {(byte) currentAckMessage.getMessageType()};
+
             outputBytesArray = concatenateByteArrays (outputOpCodeBytesArray, messageTypeByte, currentAckMessage.getPostingUser().getBytes(),
                     zeroByteArray, currentAckMessage.getContent().getBytes(), zeroByteArray);
 
@@ -268,15 +287,20 @@ public class BGSMessageEncoderDecoder implements MessageEncoderDecoder<BGSMessag
         return outputByteArray;
     }
 
-    private byte[] concatenateByteArrays (byte[]... byteArrays){
+    /** An aid function that concatenates n bytes arrays serially
+     * @param byteArrays the arrays to concatenate
+     * @return the concatenated array
+     */
+    private byte[] concatenateByteArrays(byte[]... byteArrays){
 
         int outputArrayLength = 0;
+
+        // record the length of the output array
         for (byte[] currentByteArray : byteArrays)
             outputArrayLength += currentByteArray.length;
 
-        byte[] outputByteArray = new byte[outputArrayLength];
-
-        int currentPosition = 0;
+        byte[] outputByteArray = new byte[outputArrayLength]; // create the output array with the desired size
+        int currentPosition = 0; // an index that keeps track of the array position
 
         for (byte[] currentByteArray : byteArrays) {
             System.arraycopy(currentByteArray, 0, outputByteArray, currentPosition, currentByteArray.length);

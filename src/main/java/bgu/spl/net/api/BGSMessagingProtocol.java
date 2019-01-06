@@ -19,7 +19,8 @@ public class BGSMessagingProtocol implements BidiMessagingProtocol<BGSMessage> {
     private ConnectionsImpl<BGSMessage> currentServerConnections;
     private final BGSUsers currentServerUsers;
     private boolean shouldTerminate;
-    private static final ConcurrentHashMap<Integer,String> connectionIDsAndLoggedInUsers = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer,String> connectionIDsAndLoggedInUsers
+             = new ConcurrentHashMap<>(); // a static field for the maps of the connections that have a user logged in
 
     // constructor
 
